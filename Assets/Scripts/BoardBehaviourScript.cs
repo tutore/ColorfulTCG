@@ -19,9 +19,13 @@ public class BoardBehaviourScript : MonoBehaviour {
     public List<GameObject> AIHandCards = new List<GameObject>();
     public List<GameObject> AITableCards = new List<GameObject>();
 
+    public HeroBehaviourScript MyHero;
+    public HeroBehaviourScript AIHero;
+
     public enum Turn { MyTurn, AITurn };
     public Turn turn = Turn.MyTurn;
 
+    int totalTurn = 1;
     int maxMyMana = 1;
     int maxAIMana = 1;
     int MyMana = 1;
@@ -111,10 +115,52 @@ public class BoardBehaviourScript : MonoBehaviour {
             winnertext.text = "You Losse";
             //Destroy(this);
         }
-    }*/
+    }
+    */
+
+    void NewTurn ()
+    {
+        if (turn == Turn.MyTurn) // 내 턴의 시작 시
+        {
+            if (maxAIMana < 10) maxAIMana++;
+            DrawCardFromDeck(CardBehaviourScript.Team.My);
+            MyHero.canMove = true;
+        }
+        else if (turn == Turn.AITurn) // 상대 턴의 시작 시
+        {
+            if (maxMyMana < 10) maxMyMana++;
+            DrawCardFromDeck(CardBehaviourScript.Team.AI);
+            AIHero.canMove = true;
+        }
+
+        MyMana = maxMyMana;
+        AIMana = maxAIMana;
+        totalTurn++;
+
+        HandPositionUpdate();
+        TablePositionUpdate();
+
+        UpdateGame();
+
+    }
+
+    void EndTurn ()
+    {
+        if (turn == Turn.MyTurn) // 내 턴의 종료 시
+        {
+            turn = Turn.AITurn;
+        }
+        else if (turn == Turn.AITurn) // 상대 턴의 종료 시
+        {
+            turn = Turn.MyTurn;
+        }
+            }
+        }
+    }
 
     public void DrawCardFromDeck(CardBehaviourScript.Team team)
     {
+        // 카드를 뽑는다
         if (team == CardBehaviourScript.Team.My && MyDeckCards.Count != 0 && MyHandCards.Count <= 7)
         {
             int random = Random.Range(0, MyDeckCards.Count);
@@ -123,6 +169,7 @@ public class BoardBehaviourScript : MonoBehaviour {
             // 카드를 패로 옮긴다
             //tempCard.transform.position = MyHandPos.position;
             tempCard.GetComponent<CardBehaviourScript>().newPos = MyHandPos.position;
+            tempCard.transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(0.0f, 180.0f, 0.0f), Time.deltaTime * 3);
             tempCard.GetComponent<CardBehaviourScript>().SetCardStatus(CardBehaviourScript.CardStatus.InHand);
 
             // 카드를 뽑았으면 덱 리스트에서 제거하고 패 리스트에 추가한다
@@ -136,6 +183,7 @@ public class BoardBehaviourScript : MonoBehaviour {
             GameObject tempCard = AIDeckCards[random];
 
             tempCard.transform.position = AIHandPos.position;
+            tempCard.transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(0.0f, 180.0f, 0.0f), Time.deltaTime * 3);
             tempCard.GetComponent<CardBehaviourScript>().SetCardStatus(CardBehaviourScript.CardStatus.InHand);
 
             AIDeckCards.Remove(tempCard);
@@ -146,6 +194,7 @@ public class BoardBehaviourScript : MonoBehaviour {
 
     public void HandPositionUpdate()
     {
+        // 손 패의 정보를 업데이트한다
         float space = 0f;
         float space2 = 0f;
         float gap = 1.8f;
@@ -167,6 +216,7 @@ public class BoardBehaviourScript : MonoBehaviour {
 
     public void TablePositionUpdate()
     {
+        // 테이블의 정보를 업데이트한다
         float space = 0f;
         float space2 = 0f;
         float gap = 1.8f;
@@ -191,6 +241,7 @@ public class BoardBehaviourScript : MonoBehaviour {
 
     public void PlaceCard(CardBehaviourScript card)
     {
+        // 카드를 보드에 놓는다
         Debug.Log("place card 2");
         if (card.team == CardBehaviourScript.Team.My && MyMana - card.mana >= 0 && MyTableCards.Count < 5)
         {
@@ -220,8 +271,9 @@ public class BoardBehaviourScript : MonoBehaviour {
         UpdateGame();
     }
 
-    void OnTriggerEnter(Collider Obj)
+    void OnTriggerStay(Collider Obj)
     {
+        // 드래그한 카드가 보드의 트리거를 켜면 카드를 놓는다.
         CardBehaviourScript card = Obj.GetComponent<CardBehaviourScript>();
         if (card.GetSelected() == false)
         { 
