@@ -146,6 +146,17 @@ public class BoardBehaviourScript : MonoBehaviour {
 
     void EndTurn ()
     {
+        foreach (GameObject obj in GameObject.FindGameObjectsWithTag("Object"))
+        {
+            ObjectBehaviourScript objData = obj.GetComponent<ObjectBehaviourScript>();
+            if ( objData != null )
+            {
+                if (objData.health < 1)
+                {
+                    Destroy(obj);
+                }
+            }
+        }
         if (turn == Turn.MyTurn) // 내 턴의 종료 시
         {
             turn = Turn.AITurn;
@@ -154,6 +165,17 @@ public class BoardBehaviourScript : MonoBehaviour {
         {
             turn = Turn.MyTurn;
         }
+        NewTurn();
+
+    }
+
+    void OnGUI ()
+    {
+        if (gameStarted)
+        {
+            if (GUI.Button(new Rect(Screen.width / 2 - 50, Screen.height / 6 - 25, 100, 50), "End Turn"))
+            {
+                EndTurn();
             }
         }
     }
@@ -242,7 +264,6 @@ public class BoardBehaviourScript : MonoBehaviour {
     public void PlaceCard(CardBehaviourScript card)
     {
         // 카드를 보드에 놓는다
-        Debug.Log("place card 2");
         if (card.team == CardBehaviourScript.Team.My && MyMana - card.mana >= 0 && MyTableCards.Count < 5)
         {
             card.GetComponent<CardBehaviourScript>().newPos = MyTablePos.position; // 카드의 새 위치를 테이블로 지정

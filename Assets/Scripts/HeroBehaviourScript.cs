@@ -5,8 +5,11 @@ using UnityEngine;
 public class HeroBehaviourScript : MonoBehaviour {
 
     public int health = 20;
+    public TextMesh healthText;
     public int guard = 0;
+    public TextMesh guardText;
     public int damage = 0;
+    public TextMesh damageText;
     public bool canMove = true;
 
     public enum Team { My, AI };
@@ -29,6 +32,9 @@ public class HeroBehaviourScript : MonoBehaviour {
     void FixedUpdate ()
     {
         transform.position = Vector3.Lerp(transform.position, newPos, Time.deltaTime * 3);
+        healthText.text = health.ToString();
+        guardText.text = guard.ToString();
+        damageText.text = damage.ToString();
     }
     
     void OnMouseDrag ()
