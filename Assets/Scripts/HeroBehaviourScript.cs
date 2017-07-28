@@ -37,7 +37,7 @@ public class HeroBehaviourScript : MonoBehaviour {
         damageText.text = damage.ToString();
     }
     
-    void OnMouseDrag ()
+    void OnMouseDrag () // save temp position
     {
         if ( canMove == true )
         {
@@ -45,7 +45,7 @@ public class HeroBehaviourScript : MonoBehaviour {
         }
     }
 
-    void OnMouseUp ()
+    void OnMouseUp () // move left or right according to distance from current position to temp position
     {
         Debug.Log("mouse on");
         if ( team == Team.My && canMove == true && System.Math.Abs(tmpPos.x - transform.position.x) > 1.0 )
@@ -59,7 +59,7 @@ public class HeroBehaviourScript : MonoBehaviour {
             {
                 newPos = new Vector3(transform.position.x + 1, transform.position.y, transform.position.z);
             }
-            canMove = false;
+            canMove = false; // move once in a turn
         }
     }
 }

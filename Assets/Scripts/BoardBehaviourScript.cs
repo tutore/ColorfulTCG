@@ -14,10 +14,10 @@ public class BoardBehaviourScript : MonoBehaviour {
 
     public List<GameObject> MyDeckCards = new List<GameObject>();
     public List<GameObject> MyHandCards = new List<GameObject>();
-    public List<GameObject> MyTableCards = new List<GameObject>();
+    //public List<GameObject> MyTableCards = new List<GameObject>();
     public List<GameObject> AIDeckCards = new List<GameObject>();
     public List<GameObject> AIHandCards = new List<GameObject>();
-    public List<GameObject> AITableCards = new List<GameObject>();
+    //public List<GameObject> AITableCards = new List<GameObject>();
 
     public HeroBehaviourScript MyHero;
     public HeroBehaviourScript AIHero;
@@ -138,7 +138,7 @@ public class BoardBehaviourScript : MonoBehaviour {
         totalTurn++;
 
         HandPositionUpdate();
-        TablePositionUpdate();
+        //TablePositionUpdate();
 
         UpdateGame();
 
@@ -149,9 +149,10 @@ public class BoardBehaviourScript : MonoBehaviour {
         foreach (GameObject obj in GameObject.FindGameObjectsWithTag("Object"))
         {
             ObjectBehaviourScript objData = obj.GetComponent<ObjectBehaviourScript>();
+            objData.SetColl( true ); // 오브젝트의 충돌 판정을 다시 가능하게 한다
             if ( objData != null )
             {
-                if (objData.health < 1)
+                if (objData.health <= 0 && objData.guard <= 0)
                 {
                     Destroy(obj);
                 }
@@ -183,7 +184,7 @@ public class BoardBehaviourScript : MonoBehaviour {
     public void DrawCardFromDeck(CardBehaviourScript.Team team)
     {
         // 카드를 뽑는다
-        if (team == CardBehaviourScript.Team.My && MyDeckCards.Count != 0 && MyHandCards.Count <= 7)
+        if (team == CardBehaviourScript.Team.My && MyDeckCards.Count != 0 && MyHandCards.Count <= 5)
         {
             int random = Random.Range(0, MyDeckCards.Count);
             GameObject tempCard = MyDeckCards[random];
@@ -236,6 +237,7 @@ public class BoardBehaviourScript : MonoBehaviour {
         }
     }
 
+    /*
     public void TablePositionUpdate()
     {
         // 테이블의 정보를 업데이트한다
@@ -259,39 +261,42 @@ public class BoardBehaviourScript : MonoBehaviour {
             space2 += gap;
         }
     }
+    */
 
 
     public void PlaceCard(CardBehaviourScript card)
     {
         // 카드를 보드에 놓는다
-        if (card.team == CardBehaviourScript.Team.My && MyMana - card.mana >= 0 && MyTableCards.Count < 5)
+        if (card.team == CardBehaviourScript.Team.My && MyMana - card.mana >= 0 /*&& MyTableCards.Count < 5*/)
         {
-            card.GetComponent<CardBehaviourScript>().newPos = MyTablePos.position; // 카드의 새 위치를 테이블로 지정
+            //card.GetComponent<CardBehaviourScript>().newPos = MyTablePos.position; // 카드의 새 위치를 테이블로 지정
 
-            // 카드를 냈으면 패 리스트에서 제거하고 테이블 리스트에 추가한다
+            // 카드를 냈으면 패 리스트에서 제거하고 테이블 리스트에 추가한다            
             MyHandCards.Remove(card.gameObject);
-            MyTableCards.Add(card.gameObject);
+            //MyTableCards.Add(card.gameObject);
             card.SetCardStatus(CardBehaviourScript.CardStatus.OnTable);
 
             MyMana -= card.mana;
         }
 
-        if(card.team == CardBehaviourScript.Team.AI && AIMana - card.mana >= 0 && AITableCards.Count < 5)
+        if(card.team == CardBehaviourScript.Team.AI && AIMana - card.mana >= 0 /*&& AITableCards.Count < 5*/)
         {
-            card.GetComponent<CardBehaviourScript>().newPos = MyTablePos.position; // 카드의 새 위치를 테이블로 지정
+            //card.GetComponent<CardBehaviourScript>().newPos = MyTablePos.position; // 카드의 새 위치를 테이블로 지정
 
             AIHandCards.Remove(card.gameObject);
-            AITableCards.Add(card.gameObject);
+            //AITableCards.Add(card.gameObject);
 
             card.SetCardStatus(CardBehaviourScript.CardStatus.OnTable);
 
             AIMana -= card.mana;
         }
-        TablePositionUpdate();
+        
+        //TablePositionUpdate();
         HandPositionUpdate();
         UpdateGame();
     }
 
+    /*
     void OnTriggerStay(Collider Obj)
     {
         // 드래그한 카드가 보드의 트리거를 켜면 카드를 놓는다.
@@ -301,5 +306,5 @@ public class BoardBehaviourScript : MonoBehaviour {
             card.PlaceCard();
         }
     }
-    
+    */
 }

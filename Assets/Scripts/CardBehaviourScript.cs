@@ -69,13 +69,15 @@ public class CardBehaviourScript : MonoBehaviour {
         manaText.text = mana.ToString();
     }
 
-    public void PlaceCard()
+    void PlaceCard()
     {
         if (BoardBehaviourScript.instance.turn == BoardBehaviourScript.Turn.MyTurn && cardStatus == CardStatus.InHand && team == Team.My)
         {
             //selected = false;
             BoardBehaviourScript.instance.PlaceCard(this);
             CreateObject();
+            SetCardStatus(CardStatus.Destroyed);
+            Destroy(this.gameObject);
         }
     }
 
@@ -93,7 +95,14 @@ public class CardBehaviourScript : MonoBehaviour {
         if ( description.Contains("직사") )
         {
             Debug.Log("직사");
-            objRigidBody.AddForce(Vector2.right * 101);
+            objRigidBody.AddForce(Vector2.right * 100);
+            objRigidBody.AddForce(Vector2.up * 40);
+        }
+        if (description.Contains("곡사"))
+        {
+            Debug.Log("곡사");
+            objRigidBody.AddForce(Vector2.right * 100);
+            objRigidBody.AddForce(Vector2.up * 80);
         }
         return obj;
     }
@@ -101,6 +110,9 @@ public class CardBehaviourScript : MonoBehaviour {
     void OnMouseDown()
     {
         Debug.Log("On Mouse Down Event");
+
+        transform.localScale = new Vector3(transform.localScale.x * 2, transform.localScale.y * 2, transform.localScale.z);
+
         if (cardStatus == CardStatus.InHand && team == Team.My)
         {
             selected = true;
@@ -111,6 +123,15 @@ public class CardBehaviourScript : MonoBehaviour {
     void OnMouseUp()
     {
         Debug.Log("On Mouse Up Event");
+
+        transform.localScale = new Vector3(transform.localScale.x / 2, transform.localScale.y / 2, transform.localScale.z);
+
+        RaycastHit hit;
+        if (Physics.Raycast(transform.position, transform.forward, out hit)) // 카드의 위치에서 보드 방향으로 ray를 쏜다
+        {
+            if (hit.transform.CompareTag("Field")) PlaceCard();
+        }
+
         selected = false;
         
     }
