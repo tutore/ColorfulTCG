@@ -39,7 +39,7 @@ public class CardBehaviourScript : MonoBehaviour {
     float distance_to_screen;
     bool selected = false;
 
-    // Use this for initialization
+    // Use this for initializationx`
     void Start ()
     {
         distance_to_screen = Camera.main.WorldToScreenPoint(gameObject.transform.position).z - 1;
@@ -61,7 +61,8 @@ public class CardBehaviourScript : MonoBehaviour {
             transform.position = Vector3.Lerp(transform.position, newPos, Time.deltaTime * 3);
             if (cardStatus == CardStatus.InDeck)
             {
-                transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(0.0f, 180.0f, 0.0f), Time.deltaTime * 3);
+                transform.rotation = Quaternion.Euler(0.0f, 180.0f, 0.0f);
+                //transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(0.0f, 180.0f, 0.0f), Time.deltaTime * 3);
             }
         }
         //Update Visuals

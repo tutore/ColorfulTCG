@@ -192,8 +192,9 @@ public class BoardBehaviourScript : MonoBehaviour {
             // 카드를 패로 옮긴다
             //tempCard.transform.position = MyHandPos.position;
             tempCard.GetComponent<CardBehaviourScript>().newPos = MyHandPos.position;
-            tempCard.transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(0.0f, 180.0f, 0.0f), Time.deltaTime * 3);
             tempCard.GetComponent<CardBehaviourScript>().SetCardStatus(CardBehaviourScript.CardStatus.InHand);
+            tempCard.transform.rotation = Quaternion.identity;
+            //tempCard.transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(0.0f, 180.0f, 0.0f), Time.deltaTime * 3);
 
             // 카드를 뽑았으면 덱 리스트에서 제거하고 패 리스트에 추가한다
             MyDeckCards.Remove(tempCard);
@@ -206,8 +207,9 @@ public class BoardBehaviourScript : MonoBehaviour {
             GameObject tempCard = AIDeckCards[random];
 
             tempCard.transform.position = AIHandPos.position;
-            tempCard.transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(0.0f, 180.0f, 0.0f), Time.deltaTime * 3);
             tempCard.GetComponent<CardBehaviourScript>().SetCardStatus(CardBehaviourScript.CardStatus.InHand);
+            tempCard.transform.rotation = Quaternion.identity;
+            //tempCard.transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(0.0f, 180.0f, 0.0f), Time.deltaTime * 3);
 
             AIDeckCards.Remove(tempCard);
             AIHandCards.Add(tempCard);

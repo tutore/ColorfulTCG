@@ -10,32 +10,33 @@ public class ObjectBehaviourScript : MonoBehaviour {
     public TextMesh guardText;
     public int damage = 0;
     public TextMesh damageText;
-    bool isColl = true; // 충돌 가능 상태
+    public bool isColl = true; // 충돌 가능 상태
 
     CardBehaviourScript card;
 
     void OnCollisionEnter2D(Collision2D other)
     {
-        if (other != null && isColl == true) // 오브젝트가 충돌하고 만약 충돌 가능 상태일 경우
+        // 오브젝트가 충돌하고 만약 충돌 가능 상태일 경우
+        
+        if (other.gameObject.tag == "Object" && isColl == true)
         {
-            if (health <= 0 && guard <= 0)
-                Destroy(this.gameObject);
+            Debug.Log("obj trigger on");
             isColl = false; // 중복해서 충돌하지 않게 꺼준다
-            if (other.gameObject.tag == "Object")
-            {
-                Debug.Log("obj trigger on");
-                ObjectBehaviourScript target = other.gameObject.GetComponent<ObjectBehaviourScript>();
-                if (target.health > 0 && damage > 0) target.health -= damage;
-                if (health > 0 && target.damage > 0) health -= target.damage;
-            }
-            else if (other.gameObject.tag == "Player")
-            {
-                Debug.Log("player trigger on");
-                HeroBehaviourScript target = other.gameObject.GetComponent<HeroBehaviourScript>();
-                if (target.health > 0 && damage > 0) target.health -= damage;
-                if (health > 0 && target.damage > 0) health -= target.damage;
-            }
-            //StartCoroutine("DestroyObject");
+            ObjectBehaviourScript target = other.gameObject.GetComponent<ObjectBehaviourScript>();
+            //if (health <= 0 && guard <= 0) Destroy(this.gameObject);
+            if (target.health > 0 && damage > 0) target.health -= damage;
+            if (health > 0 && target.damage > 0) health -= target.damage;
+            if (this.gameObject != null) StartCoroutine("DestroyObject");
+        }
+        else if (other.gameObject.tag == "Player" && isColl == true)
+        {
+            Debug.Log("player trigger on");
+            isColl = false; // 중복해서 충돌하지 않게 꺼준다
+            HeroBehaviourScript target = other.gameObject.GetComponent<HeroBehaviourScript>();
+            //if (health <= 0 && guard <= 0) Destroy(this.gameObject);
+            if (target.health > 0 && damage > 0) target.health -= damage;
+            if (health > 0 && target.damage > 0) health -= target.damage;
+            if (this.gameObject != null) StartCoroutine("DestroyObject");
         }
     }
 
