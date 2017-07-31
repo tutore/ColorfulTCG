@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class ObjectBehaviourScript : MonoBehaviour {
 
+    CardBehaviourScript card;
+
     public int health = 0;
     public TextMesh healthText;
     public int guard = 0;
@@ -11,8 +13,6 @@ public class ObjectBehaviourScript : MonoBehaviour {
     public int damage = 0;
     public TextMesh damageText;
     public bool isColl = true; // 충돌 가능 상태
-
-    CardBehaviourScript card;
 
     void OnCollisionEnter2D(Collision2D other)
     {

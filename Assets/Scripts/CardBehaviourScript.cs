@@ -22,12 +22,13 @@ public class CardBehaviourScript : MonoBehaviour {
     public List<Texture2D> statusImage;
 
     public GameObject objectPrefab;
-    ObjectBehaviourScript objectData;
-
+    
     // 소스
     public List<Texture2D> statusImagePrefab;
 
-    public enum CardStatus { InDeck, InHand, OnTable, Destroyed};
+    public enum CardType { Object, Movement };
+    public CardType cardType;
+    public enum CardStatus { InDeck, InHand, OnTable, Destroyed };
     public CardStatus cardStatus = CardStatus.InDeck;
     public enum Team { My, AI };
     public Team team = Team.My;
@@ -70,39 +71,111 @@ public class CardBehaviourScript : MonoBehaviour {
         manaText.text = mana.ToString();
     }
 
-    void PlaceCard()
+    public void DoMovement()
     {
-        if (BoardBehaviourScript.instance.turn == BoardBehaviourScript.Turn.MyTurn && cardStatus == CardStatus.InHand && team == Team.My)
+        GameObject hero;
+        Vector3 movementPosition;
+        HeroBehaviourScript heroData;
+        Rigidbody2D heroRigidBody;
+
+        if (team == Team.My)
         {
-            //selected = false;
-            BoardBehaviourScript.instance.PlaceCard(this);
-            CreateObject();
-            SetCardStatus(CardStatus.Destroyed);
-            Destroy(this.gameObject);
+            hero = MyHero;
+        }
+        else
+        {
+            hero = AIHero;
+        }
+
+        movementPosition = hero.transform.position;
+        heroData = hero.GetComponent<HeroBehaviourScript>();
+        heroRigidBody = hero.GetComponent<Rigidbody2D>();
+
+        if (description.Contains("도약"))
+        {
+            Debug.Log("도약");
+            heroRigidBody.AddForce(Vector2.up * 30000);
+            if (team == Team.My)
+            {
+                heroRigidBody.AddForce(Vector2.right * 600);
+                movementPosition.x++;
+                heroData.newPos = movementPosition;
+            }
+            else
+            {
+                heroRigidBody.AddForce(Vector2.right * (-600));
+                movementPosition.x--;
+                heroData.newPos = movementPosition;
+            }
+        }
+        if (description.Contains("돌진"))
+        {
+            Debug.Log("돌진");
+            heroRigidBody.AddForce(Vector2.up * 15000);
+            if (team == Team.My)
+            {
+                heroRigidBody.AddForce(Vector2.right * 5000);
+                movementPosition.x += 2;
+                heroData.newPos = movementPosition;
+            }
+            else
+            {
+                heroRigidBody.AddForce(Vector2.right * (-5000));
+                movementPosition.x -= 2;
+                heroData.newPos = movementPosition;
+            }
         }
     }
 
-    GameObject CreateObject()
+    public GameObject CreateObject()
     {
-        Vector3 objectPosition = MyHero.transform.position;
-        objectPosition.x++;
-        GameObject obj = (GameObject)Instantiate(objectPrefab, objectPosition, Quaternion.identity);
+        GameObject obj;
+        Vector3 objectPosition;
+        ObjectBehaviourScript objectData;
+        Rigidbody2D objRigidBody;
 
+        if (team == Team.My)
+        {
+            objectPosition = MyHero.transform.position;
+            objectPosition.x++;
+        }
+        else
+        {
+            objectPosition = AIHero.transform.position;
+            objectPosition.x--;
+        }
+
+        obj = (GameObject)Instantiate(objectPrefab, objectPosition, Quaternion.identity);
         objectData = obj.GetComponent<ObjectBehaviourScript>();
         objectData.health = health;
         objectData.guard = guard;
         objectData.damage = damage;
-        Rigidbody2D objRigidBody = obj.GetComponent<Rigidbody2D>();
-        if ( description.Contains("직사") )
+        objRigidBody = obj.GetComponent<Rigidbody2D>();
+
+        if (description.Contains("직사"))
         {
             Debug.Log("직사");
-            objRigidBody.AddForce(Vector2.right * 100);
+            if (team == Team.My)
+            {
+                objRigidBody.AddForce(Vector2.right * 100);
+            }
+            else
+            {
+                objRigidBody.AddForce(Vector2.right * (-100));
+            }
             objRigidBody.AddForce(Vector2.up * 40);
         }
         if (description.Contains("곡사"))
         {
             Debug.Log("곡사");
-            objRigidBody.AddForce(Vector2.right * 100);
+            if (team == Team.My)
+            {
+                objRigidBody.AddForce(Vector2.right * 100);
+            }
+            else
+            {
+                objRigidBody.AddForce(Vector2.right * (-100));
+            }
             objRigidBody.AddForce(Vector2.up * 80);
         }
         return obj;
@@ -114,7 +187,7 @@ public class CardBehaviourScript : MonoBehaviour {
 
         transform.localScale = new Vector3(transform.localScale.x * 2, transform.localScale.y * 2, transform.localScale.z);
 
-        if (cardStatus == CardStatus.InHand && team == Team.My)
+        if (cardStatus == CardStatus.InHand)
         {
             selected = true;
         }
@@ -130,7 +203,7 @@ public class CardBehaviourScript : MonoBehaviour {
         RaycastHit hit;
         if (Physics.Raycast(transform.position, transform.forward, out hit)) // 카드의 위치에서 보드 방향으로 ray를 쏜다
         {
-            if (hit.transform.CompareTag("Field")) PlaceCard();
+            if (hit.transform.CompareTag("Field")) BoardBehaviourScript.instance.PlaceCard(this);
         }
 
         selected = false;

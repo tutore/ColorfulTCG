@@ -269,26 +269,42 @@ public class BoardBehaviourScript : MonoBehaviour {
     public void PlaceCard(CardBehaviourScript card)
     {
         // 카드를 보드에 놓는다
-        if (card.team == CardBehaviourScript.Team.My && MyMana - card.mana >= 0 /*&& MyTableCards.Count < 5*/)
+        if (card.cardStatus == CardBehaviourScript.CardStatus.InHand && card.team == CardBehaviourScript.Team.My && MyMana - card.mana >= 0)
         {
             //card.GetComponent<CardBehaviourScript>().newPos = MyTablePos.position; // 카드의 새 위치를 테이블로 지정
 
             // 카드를 냈으면 패 리스트에서 제거하고 테이블 리스트에 추가한다            
             MyHandCards.Remove(card.gameObject);
             //MyTableCards.Add(card.gameObject);
-            card.SetCardStatus(CardBehaviourScript.CardStatus.OnTable);
+            //card.SetCardStatus(CardBehaviourScript.CardStatus.OnTable);
+
+            // 오브젝트를 만든다
+            if (card.cardType == CardBehaviourScript.CardType.Object)
+            {
+                card.CreateObject();
+            }
+            else
+            {
+                card.DoMovement();
+            }
+            card.SetCardStatus(CardBehaviourScript.CardStatus.Destroyed);
+            Destroy(card.gameObject);
 
             MyMana -= card.mana;
         }
 
-        if(card.team == CardBehaviourScript.Team.AI && AIMana - card.mana >= 0 /*&& AITableCards.Count < 5*/)
+        if(card.cardStatus == CardBehaviourScript.CardStatus.InHand && card.team == CardBehaviourScript.Team.AI && AIMana - card.mana >= 0)
         {
             //card.GetComponent<CardBehaviourScript>().newPos = MyTablePos.position; // 카드의 새 위치를 테이블로 지정
 
             AIHandCards.Remove(card.gameObject);
             //AITableCards.Add(card.gameObject);
+            //card.SetCardStatus(CardBehaviourScript.CardStatus.OnTable);
 
-            card.SetCardStatus(CardBehaviourScript.CardStatus.OnTable);
+            // 오브젝트를 만든다
+            card.CreateObject();
+            card.SetCardStatus(CardBehaviourScript.CardStatus.Destroyed);
+            Destroy(card.gameObject);
 
             AIMana -= card.mana;
         }

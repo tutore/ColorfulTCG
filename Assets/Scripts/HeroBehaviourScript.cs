@@ -31,6 +31,7 @@ public class HeroBehaviourScript : MonoBehaviour {
 
     void FixedUpdate ()
     {
+        transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.identity, Time.deltaTime * 3);
         transform.position = Vector3.Lerp(transform.position, newPos, Time.deltaTime * 3);
         healthText.text = health.ToString();
         guardText.text = guard.ToString();
@@ -48,9 +49,8 @@ public class HeroBehaviourScript : MonoBehaviour {
     void OnMouseUp () // move left or right according to distance from current position to temp position
     {
         Debug.Log("mouse on");
-        if ( team == Team.My && canMove == true && System.Math.Abs(tmpPos.x - transform.position.x) > 1.0 )
+        if ( canMove == true && System.Math.Abs(tmpPos.x - transform.position.x) > 1.0 )
         {
-            Debug.Log("success");
             if ( transform.position.x > tmpPos.x ) // move left
             {
                 newPos = new Vector3(transform.position.x - 1, transform.position.y, transform.position.z);
