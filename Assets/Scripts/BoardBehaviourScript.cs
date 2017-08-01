@@ -21,19 +21,19 @@ public class BoardBehaviourScript : MonoBehaviour {
 
     public HeroBehaviourScript MyHero;
     public HeroBehaviourScript AIHero;
-
-    public enum Turn { MyTurn, AITurn };
-    public Turn turn = Turn.MyTurn;
-
-    int totalTurn = 1;
+    
+    float f_time;
+    public static int time;
     int maxMyMana = 1;
     int maxAIMana = 1;
     int MyMana = 1;
     int AIMana = 1;
 
+    public TextMesh TimeText;
     public TextMesh MyManaText;
     public TextMesh AIManaText;
 
+    public bool timeContinued = true;
     public bool gameStarted = false;
 
     void Awake()
@@ -60,7 +60,7 @@ public class BoardBehaviourScript : MonoBehaviour {
                 c.GetComponent<CardBehaviourScript>().newPos = AIDeckPos.position;
             }
         }
-
+        
         //Start Game
         StartGame();
     }
@@ -80,13 +80,27 @@ public class BoardBehaviourScript : MonoBehaviour {
 
     // Update is called once per frame
     void Update () {
+        UpdateTime();
+    }
 
+    void UpdateTime()
+    {        
+        if ( timeContinued == true )
+        {
+            f_time += Time.deltaTime;
+            time = Mathf.FloorToInt(f_time);
+            TimeText.text = time.ToString();
+        }
+        if (time % 10 == 0 && time != 0)    // 10초마다 호출
+        {
+            NewTurn();
+        }
     }
 
     void UpdateGame()
     {
-        MyManaText.text = MyMana.ToString() + "/" + maxMyMana;
-        AIManaText.text = AIMana.ToString() + "/" + maxAIMana;
+        MyManaText.text = MyMana.ToString() + "/" + maxMyMana.ToString();
+        AIManaText.text = AIMana.ToString() + "/" + maxAIMana.ToString();
 
         /*
         if (MyHero.health <= 0)
@@ -120,22 +134,31 @@ public class BoardBehaviourScript : MonoBehaviour {
 
     void NewTurn ()
     {
-        if (turn == Turn.MyTurn) // 내 턴의 시작 시
+        foreach (GameObject obj in GameObject.FindGameObjectsWithTag("Object"))
         {
-            if (maxAIMana < 10) maxAIMana++;
-            DrawCardFromDeck(CardBehaviourScript.Team.My);
-            MyHero.canMove = true;
+            ObjectBehaviourScript objData = obj.GetComponent<ObjectBehaviourScript>();
+            objData.SetColl(true); // 오브젝트의 충돌 판정을 다시 가능하게 한다
+            if (objData != null)
+            {
+                if (objData.health <= 0 && objData.guard <= 0)
+                {
+                    Destroy(obj);
+                }
+            }
         }
-        else if (turn == Turn.AITurn) // 상대 턴의 시작 시
-        {
-            if (maxMyMana < 10) maxMyMana++;
-            DrawCardFromDeck(CardBehaviourScript.Team.AI);
-            AIHero.canMove = true;
-        }
+        
+        // 양 팀의 최대마나를 1 늘리고 마나를 1 회복시킨다
+        if (maxMyMana < 10) maxMyMana++;
+        if (MyMana + 1 <= maxMyMana) MyMana += 1;
+        if (maxAIMana < 10) maxAIMana++;
+        if (AIMana + 1 <= maxAIMana) AIMana += 1;
 
-        MyMana = maxMyMana;
-        AIMana = maxAIMana;
-        totalTurn++;
+        // 양 팀이 카드를 한 장씩 뽑는다
+        DrawCardFromDeck(CardBehaviourScript.Team.My);
+        DrawCardFromDeck(CardBehaviourScript.Team.AI);
+        // 영웅을 다시 이동 가능하게 한다
+        MyHero.canMove = true;
+        AIHero.canMove = true;
 
         HandPositionUpdate();
         //TablePositionUpdate();
@@ -144,42 +167,18 @@ public class BoardBehaviourScript : MonoBehaviour {
 
     }
 
-    void EndTurn ()
+    /*
+void OnGUI ()
+{
+    if (gameStarted)
     {
-        foreach (GameObject obj in GameObject.FindGameObjectsWithTag("Object"))
+        if (GUI.Button(new Rect(Screen.width / 2 - 50, Screen.height / 6 - 25, 100, 50), "End Turn"))
         {
-            ObjectBehaviourScript objData = obj.GetComponent<ObjectBehaviourScript>();
-            objData.SetColl( true ); // 오브젝트의 충돌 판정을 다시 가능하게 한다
-            if ( objData != null )
-            {
-                if (objData.health <= 0 && objData.guard <= 0)
-                {
-                    Destroy(obj);
-                }
-            }
-        }
-        if (turn == Turn.MyTurn) // 내 턴의 종료 시
-        {
-            turn = Turn.AITurn;
-        }
-        else if (turn == Turn.AITurn) // 상대 턴의 종료 시
-        {
-            turn = Turn.MyTurn;
-        }
-        NewTurn();
-
-    }
-
-    void OnGUI ()
-    {
-        if (gameStarted)
-        {
-            if (GUI.Button(new Rect(Screen.width / 2 - 50, Screen.height / 6 - 25, 100, 50), "End Turn"))
-            {
-                EndTurn();
-            }
+            EndTurn();
         }
     }
+}
+    */
 
     public void DrawCardFromDeck(CardBehaviourScript.Team team)
     {
@@ -283,7 +282,7 @@ public class BoardBehaviourScript : MonoBehaviour {
             {
                 card.CreateObject();
             }
-            else
+            else // 무브먼트를 사용한다
             {
                 card.DoMovement();
             }
@@ -302,7 +301,14 @@ public class BoardBehaviourScript : MonoBehaviour {
             //card.SetCardStatus(CardBehaviourScript.CardStatus.OnTable);
 
             // 오브젝트를 만든다
-            card.CreateObject();
+            if (card.cardType == CardBehaviourScript.CardType.Object)
+            {
+                card.CreateObject();
+            }
+            else // 무브먼트를 사용한다
+            {
+                card.DoMovement();
+            }
             card.SetCardStatus(CardBehaviourScript.CardStatus.Destroyed);
             Destroy(card.gameObject);
 
