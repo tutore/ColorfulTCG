@@ -34,6 +34,7 @@ public class BoardBehaviourScript : MonoBehaviour {
     public TextMesh AIManaText;
 
     public bool timeContinued = true;
+    public bool newturned = false;
     public bool gameStarted = false;
 
     void Awake()
@@ -60,8 +61,9 @@ public class BoardBehaviourScript : MonoBehaviour {
                 c.GetComponent<CardBehaviourScript>().newPos = AIDeckPos.position;
             }
         }
-        
+
         //Start Game
+        InvokeRepeating("NewTurn", 10f, 10f);
         StartGame();
     }
 
@@ -90,10 +92,6 @@ public class BoardBehaviourScript : MonoBehaviour {
             f_time += Time.deltaTime;
             time = Mathf.FloorToInt(f_time);
             TimeText.text = time.ToString();
-        }
-        if (time % 10 == 0 && time != 0)    // 10초마다 호출
-        {
-            NewTurn();
         }
     }
 
@@ -183,7 +181,7 @@ void OnGUI ()
     public void DrawCardFromDeck(CardBehaviourScript.Team team)
     {
         // 카드를 뽑는다
-        if (team == CardBehaviourScript.Team.My && MyDeckCards.Count != 0 && MyHandCards.Count <= 5)
+        if (team == CardBehaviourScript.Team.My && MyDeckCards.Count != 0 && MyHandCards.Count < 5)
         {
             int random = Random.Range(0, MyDeckCards.Count);
             GameObject tempCard = MyDeckCards[random];
@@ -200,7 +198,7 @@ void OnGUI ()
             MyHandCards.Add(tempCard);
         }
 
-        if (team == CardBehaviourScript.Team.AI && AIDeckCards.Count != 0 && AIHandCards.Count < 7)
+        if (team == CardBehaviourScript.Team.AI && AIDeckCards.Count != 0 && AIHandCards.Count < 5)
         {
             int random = Random.Range(0, AIDeckCards.Count);
             GameObject tempCard = AIDeckCards[random];
@@ -221,7 +219,7 @@ void OnGUI ()
         // 손 패의 정보를 업데이트한다
         float space = 0f;
         float space2 = 0f;
-        float gap = 1.8f;
+        float gap = 1.6f;
 
         foreach (GameObject card in MyHandCards)
         {

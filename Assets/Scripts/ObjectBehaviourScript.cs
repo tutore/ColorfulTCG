@@ -20,6 +20,32 @@ public class ObjectBehaviourScript : MonoBehaviour {
         
         if (other.gameObject.tag == "Object" && isColl == true)
         {
+            Debug.Log("obj collision");
+            isColl = false; // 중복해서 충돌하지 않게 꺼준다
+            ObjectBehaviourScript target = other.gameObject.GetComponent<ObjectBehaviourScript>();
+            //if (health <= 0 && guard <= 0) Destroy(this.gameObject);
+            if (target.health > 0 && damage > 0) target.health -= damage;
+            if (health > 0 && target.damage > 0) health -= target.damage;
+            if (this.gameObject != null) StartCoroutine("DestroyObject");
+        }
+        else if (other.gameObject.tag == "Player" && isColl == true)
+        {
+            Debug.Log("player collision");
+            isColl = false; // 중복해서 충돌하지 않게 꺼준다
+            HeroBehaviourScript target = other.gameObject.GetComponent<HeroBehaviourScript>();
+            //if (health <= 0 && guard <= 0) Destroy(this.gameObject);
+            if (target.health > 0 && damage > 0) target.health -= damage;
+            if (health > 0 && target.damage > 0) health -= target.damage;
+            if (this.gameObject != null) StartCoroutine("DestroyObject");
+        }
+    }
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        // 오브젝트가 충돌하고 만약 충돌 가능 상태일 경우
+
+        if (other.gameObject.tag == "Object" && isColl == true)
+        {
             Debug.Log("obj trigger on");
             isColl = false; // 중복해서 충돌하지 않게 꺼준다
             ObjectBehaviourScript target = other.gameObject.GetComponent<ObjectBehaviourScript>();
@@ -38,6 +64,7 @@ public class ObjectBehaviourScript : MonoBehaviour {
             if (health > 0 && target.damage > 0) health -= target.damage;
             if (this.gameObject != null) StartCoroutine("DestroyObject");
         }
+
     }
 
     IEnumerator DestroyObject()

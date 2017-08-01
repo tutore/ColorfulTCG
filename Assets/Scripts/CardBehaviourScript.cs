@@ -133,7 +133,9 @@ public class CardBehaviourScript : MonoBehaviour {
         Vector3 objectPosition;
         ObjectBehaviourScript objectData;
         Rigidbody2D objRigidBody;
-
+        BoxCollider2D objCollider;
+        
+        // 오브젝트가 생성될 위치를 정해준다
         if (team == Team.My)
         {
             objectPosition = MyHero.transform.position;
@@ -151,7 +153,14 @@ public class CardBehaviourScript : MonoBehaviour {
         objectData.guard = guard;
         objectData.damage = damage;
         objRigidBody = obj.GetComponent<Rigidbody2D>();
+        objCollider = obj.GetComponent<BoxCollider2D>();
 
+        if (team == Team.AI) // 적의 오브젝트면 오브젝트의 좌우를 뒤집는다
+        {
+            obj.transform.rotation = Quaternion.Euler(0.0f, 180.0f, 0.0f);
+        }
+
+        // 특수효과
         if (description.Contains("직사"))
         {
             Debug.Log("직사");
@@ -178,6 +187,13 @@ public class CardBehaviourScript : MonoBehaviour {
             }
             objRigidBody.AddForce(Vector2.up * 80);
         }
+        if (description.Contains("관통"))
+        {
+            Debug.Log("관통");
+            objRigidBody.isKinematic = true;    // 오브젝트가 물리 작용을 안 받도록 해준다
+            objCollider.isTrigger = true;       // 오브젝트가 충돌되지 않고 트리거만 발동하도록 해준다
+        }
+        // 특수효과 끝
         return obj;
     }
 
