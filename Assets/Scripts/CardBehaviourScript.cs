@@ -164,28 +164,14 @@ public class CardBehaviourScript : MonoBehaviour {
         if (description.Contains("직사"))
         {
             Debug.Log("직사");
-            if (team == Team.My)
-            {
-                objRigidBody.AddForce(Vector2.right * 100);
-            }
-            else
-            {
-                objRigidBody.AddForce(Vector2.right * (-100));
-            }
-            objRigidBody.AddForce(Vector2.up * 40);
+            objRigidBody.AddForce(obj.transform.right * 100);   // Vector2.right는 그냥 오른쪽, transform.right는 그 오브젝트의 오른쪽(앞)        
+            objRigidBody.AddForce(obj.transform.up * 40);
         }
         if (description.Contains("곡사"))
         {
             Debug.Log("곡사");
-            if (team == Team.My)
-            {
-                objRigidBody.AddForce(Vector2.right * 100);
-            }
-            else
-            {
-                objRigidBody.AddForce(Vector2.right * (-100));
-            }
-            objRigidBody.AddForce(Vector2.up * 80);
+            objRigidBody.AddForce(obj.transform.right * 100);            
+            objRigidBody.AddForce(obj.transform.up * 80);
         }
         if (description.Contains("관통"))
         {

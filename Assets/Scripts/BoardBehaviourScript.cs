@@ -63,7 +63,7 @@ public class BoardBehaviourScript : MonoBehaviour {
         }
 
         //Start Game
-        InvokeRepeating("NewTurn", 10f, 10f);
+        InvokeRepeating("NewTurn", 20f, 20f);
         StartGame();
     }
 
@@ -131,20 +131,7 @@ public class BoardBehaviourScript : MonoBehaviour {
     */
 
     void NewTurn ()
-    {
-        foreach (GameObject obj in GameObject.FindGameObjectsWithTag("Object"))
-        {
-            ObjectBehaviourScript objData = obj.GetComponent<ObjectBehaviourScript>();
-            objData.SetColl(true); // 오브젝트의 충돌 판정을 다시 가능하게 한다
-            if (objData != null)
-            {
-                if (objData.health <= 0 && objData.guard <= 0)
-                {
-                    Destroy(obj);
-                }
-            }
-        }
-        
+    {        
         // 양 팀의 최대마나를 1 늘리고 마나를 1 회복시킨다
         if (maxMyMana < 10) maxMyMana++;
         if (MyMana + 1 <= maxMyMana) MyMana += 1;
@@ -154,9 +141,6 @@ public class BoardBehaviourScript : MonoBehaviour {
         // 양 팀이 카드를 한 장씩 뽑는다
         DrawCardFromDeck(CardBehaviourScript.Team.My);
         DrawCardFromDeck(CardBehaviourScript.Team.AI);
-        // 영웅을 다시 이동 가능하게 한다
-        MyHero.canMove = true;
-        AIHero.canMove = true;
 
         HandPositionUpdate();
         //TablePositionUpdate();

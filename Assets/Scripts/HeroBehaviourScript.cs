@@ -60,6 +60,13 @@ public class HeroBehaviourScript : MonoBehaviour {
                 newPos = new Vector3(transform.position.x + 1, transform.position.y, transform.position.z);
             }
             canMove = false; // move once in a turn
+            StartCoroutine("DelayMove");
         }
+    }
+
+    IEnumerator DelayMove()
+    {
+        yield return new WaitForSeconds(10f);
+        canMove = true;
     }
 }
