@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class CardBehaviourScript : MonoBehaviour {
 
@@ -57,8 +58,6 @@ public class CardBehaviourScript : MonoBehaviour {
     {
         if (!selected)
         {
-            // move position to newPos when mouse up
-            //transform.position = newPos;
             transform.position = Vector3.Lerp(transform.position, newPos, Time.deltaTime * 3);
             if (cardStatus == CardStatus.InDeck)
             {
@@ -71,6 +70,7 @@ public class CardBehaviourScript : MonoBehaviour {
         manaText.text = mana.ToString();
     }
 
+    // 무브먼트 카드를 사용한다
     public void DoMovement()
     {
         GameObject hero;
@@ -86,47 +86,25 @@ public class CardBehaviourScript : MonoBehaviour {
         {
             hero = AIHero;
         }
-
-        movementPosition = hero.transform.position;
+        
         heroData = hero.GetComponent<HeroBehaviourScript>();
         heroRigidBody = hero.GetComponent<Rigidbody2D>();
 
         if (description.Contains("도약"))
         {
             Debug.Log("도약");
-            heroRigidBody.AddForce(Vector2.up * 30000);
-            if (team == Team.My)
-            {
-                heroRigidBody.AddForce(Vector2.right * 600);
-                movementPosition.x++;
-                heroData.newPos = movementPosition;
-            }
-            else
-            {
-                heroRigidBody.AddForce(Vector2.right * (-600));
-                movementPosition.x--;
-                heroData.newPos = movementPosition;
-            }
+            heroRigidBody.AddForce(Vector2.up * 15000);
+            heroRigidBody.AddForce(heroData.direction * 6000);
         }
         if (description.Contains("돌진"))
         {
             Debug.Log("돌진");
-            heroRigidBody.AddForce(Vector2.up * 15000);
-            if (team == Team.My)
-            {
-                heroRigidBody.AddForce(Vector2.right * 5000);
-                movementPosition.x += 2;
-                heroData.newPos = movementPosition;
-            }
-            else
-            {
-                heroRigidBody.AddForce(Vector2.right * (-5000));
-                movementPosition.x -= 2;
-                heroData.newPos = movementPosition;
-            }
+            heroRigidBody.AddForce(Vector2.up * 10000);
+            heroRigidBody.AddForce(heroData.direction * 10000);
         }
     }
 
+    // 오브젝트 카드를 사용한다
     public GameObject CreateObject()
     {
         GameObject obj;
@@ -179,7 +157,7 @@ public class CardBehaviourScript : MonoBehaviour {
             objRigidBody.isKinematic = true;    // 오브젝트가 물리 작용을 안 받도록 해준다
             objCollider.isTrigger = true;       // 오브젝트가 충돌되지 않고 트리거만 발동하도록 해준다
         }
-        // 특수효과 끝
+        // 특수능력 끝
         return obj;
     }
 

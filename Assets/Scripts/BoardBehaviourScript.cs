@@ -187,7 +187,8 @@ void OnGUI ()
             int random = Random.Range(0, AIDeckCards.Count);
             GameObject tempCard = AIDeckCards[random];
 
-            tempCard.transform.position = AIHandPos.position;
+            //tempCard.transform.position = AIHandPos.position;
+            tempCard.GetComponent<CardBehaviourScript>().newPos = AIHandPos.position;
             tempCard.GetComponent<CardBehaviourScript>().SetCardStatus(CardBehaviourScript.CardStatus.InHand);
             tempCard.transform.rotation = Quaternion.identity;
             //tempCard.transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(0.0f, 180.0f, 0.0f), Time.deltaTime * 3);
@@ -208,7 +209,7 @@ void OnGUI ()
         foreach (GameObject card in MyHandCards)
         {
             int numberOfCards = MyHandCards.Count;
-            card.GetComponent<CardBehaviourScript>().newPos = MyHandPos.position + new Vector3(-(numberOfCards - 1) * 0.9f + space, 0, 0);
+            card.GetComponent<CardBehaviourScript>().newPos = MyHandPos.position + new Vector3((numberOfCards - 1) * 0.9f - space, 0, 0);
             space += gap;
         }
 
