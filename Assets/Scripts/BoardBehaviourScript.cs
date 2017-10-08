@@ -2,316 +2,249 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BoardBehaviourScript : MonoBehaviour {
-
-    public static BoardBehaviourScript instance;
-    public Transform MyDeckPos;
-    public Transform MyHandPos;
-    public Transform MyTablePos;
-    public Transform AIDeckPos;
-    public Transform AIHandPos;
-    public Transform AITablePos;
-
-    public List<GameObject> MyDeckCards = new List<GameObject>();
-    public List<GameObject> MyHandCards = new List<GameObject>();
-    //public List<GameObject> MyTableCards = new List<GameObject>();
-    public List<GameObject> AIDeckCards = new List<GameObject>();
-    public List<GameObject> AIHandCards = new List<GameObject>();
-    //public List<GameObject> AITableCards = new List<GameObject>();
-
-    public HeroBehaviourScript MyHero;
-    public HeroBehaviourScript AIHero;
-    
-    float f_time;
-    public static int time;
-    int maxMyMana = 1;
-    int maxAIMana = 1;
-    int MyMana = 1;
-    int AIMana = 1;
-
-    public TextMesh TimeText;
-    public TextMesh MyManaText;
-    public TextMesh AIManaText;
-
-    public bool timeContinued = true;
-    public bool newturned = false;
-    public bool gameStarted = false;
-
-    void Awake()
+namespace Com.tutore.ColofulTCG
+{
+    public class BoardBehaviourScript : MonoBehaviour
     {
-        instance = this;
-    }
+        public static BoardBehaviourScript instance;
 
-    // Use this for initialization
-    void Start () {
-        foreach (GameObject CardObject in GameObject.FindGameObjectsWithTag("Card"))
+        public Transform BlueDeckPos;
+        public Transform BlueHandPos;
+        public Transform BlueManaPos;
+        public Transform RedDeckPos;
+        public Transform RedHandPos;
+        public Transform RedManaPos;
+        
+        public GameObject HeroPrefab;
+        public GameObject[] CardPrefab;
+        public GameObject ManaPrefab;
+
+        public TextMesh TimeText;
+
+        private List<GameObject> MyDeckCards = new List<GameObject>();
+        private List<GameObject> MyHandCards = new List<GameObject>();
+
+        private GameObject MyHero;
+        private GameObject MyMana;
+        
+        private Transform MyDeckPos;
+        private Transform MyHandPos;
+        private Transform MyManaPos;
+
+        int maxMana = 1;
+        int Mana = 1;
+        
+        float f_time;
+        static int time;
+
+        PhotonView photonView;
+        
+        void Awake()
         {
-            CardObject.GetComponent<Rigidbody>().isKinematic = true;
-            CardBehaviourScript c = CardObject.GetComponent<CardBehaviourScript>();
+            instance = this;
+            // 팀을 설정한다
+            InitiateTeam();
+        }
+        
+        void Start()
+        {
+            // 영웅을 생성한다
+            CreateHero();
+            // 카드를 생성하여 덱을 만든다
+            CreateDeck();
+            // 마나 표시를 생성한다
+            CreateMana();
 
-            // 서로의 덱의 카드를 찾아 리스트에 넣는다
-            if (c.team == CardBehaviourScript.Team.My)
+            StartGame();
+        }
+        
+        /*
+        public void EndGame()
+        {
+            if (winner == BlueHero)
             {
-                MyDeckCards.Add(CardObject);
-                c.GetComponent<CardBehaviourScript>().newPos = MyDeckPos.position;
+                Debug.Log("MyHero Win");
+                Time.timeScale = 0;
+                //Destroy(this);
+            }
+
+            if (winner == RedHero)
+            {
+                Time.timeScale = 0;
+                Debug.Log("AIHero Win");
+                //Destroy(this);
+            }
+            GameManager.Instance.LeaveRoom();
+        }
+        */
+        void InitiateTeam()
+        {
+            // 룸에 인원이 두 명 뿐이므로 마스터 클라이언트와 로컬 클라이언트로 팀을 구분한다 
+            if (PhotonNetwork.isMasterClient)
+            {
+                PhotonNetwork.player.SetTeam(PunTeams.Team.blue);
+                MyDeckPos = BlueDeckPos;
+                MyHandPos = BlueHandPos;
+                MyManaPos = BlueManaPos;
+            }
+            else if (PhotonNetwork.isNonMasterClientInRoom)
+            {
+                PhotonNetwork.player.SetTeam(PunTeams.Team.red);
+                MyDeckPos = RedDeckPos;
+                MyHandPos = RedHandPos;
+                MyManaPos = RedManaPos;
             }
             else
             {
-                AIDeckCards.Add(CardObject);
-                c.GetComponent<CardBehaviourScript>().newPos = AIDeckPos.position;
+                Debug.Log("player can't matching");
+            }
+
+        }
+
+        void CreateHero()
+        {
+            // 현재 플레이어의 팀을 확인해서 해당 진영에 영웅을 생성한다
+            if (PhotonNetwork.player.GetTeam() == PunTeams.Team.blue)
+            {
+                MyHero = PhotonNetwork.Instantiate("Heros/" + this.HeroPrefab.name, new Vector3(-4f, 0f, -11f), Quaternion.identity, 0); //Resourses/Heros 폴더에 있는 프리팹을 가지고 온다
+                MyHero.GetComponent<PhotonView>().RPC("SetHeroTeam", PhotonTargets.All, PunTeams.Team.blue);
+            }
+            else if (PhotonNetwork.player.GetTeam() == PunTeams.Team.red)
+            {
+                MyHero = PhotonNetwork.Instantiate("Heros/" + this.HeroPrefab.name, new Vector3(4f, 0f, -11f), Quaternion.identity, 0);
+                MyHero.GetComponent<PhotonView>().RPC("SetHeroTeam", PhotonTargets.All, PunTeams.Team.red);
+            }
+            else
+            {
+                Debug.Log("can't matching hero's team");
             }
         }
 
-        //Start Game
-        InvokeRepeating("NewTurn", 20f, 20f);
-        StartGame();
-    }
-
-    public void StartGame()
-    {
-        gameStarted = true;
-        UpdateGame();
-
-        // 맨 처음 3장씩 뽑는다
-        for (int i = 0; i < 3; i++)
+        void CreateDeck()
         {
-            DrawCardFromDeck(CardBehaviourScript.Team.My);
-            DrawCardFromDeck(CardBehaviourScript.Team.AI);
+            // 추후 덱을 여러 개 만들 경우 CardPrefab[DeckNum][CardNum]으로 2차원 배열 형식으로 만들면 좋을 것 같다
+            for (int i = 0; i < CardPrefab.Length; i++)
+            {
+                GameObject card;
+                card = PhotonNetwork.Instantiate("Cards/" + this.CardPrefab[i].name, MyDeckPos.position, Quaternion.identity, 0);
+                
+                PhotonView pv = card.GetComponent<PhotonView>();
+                MyDeckCards.Add(card);
+                pv.RPC("SetNewPosition", PhotonTargets.All, MyDeckPos.position);
+                pv.RPC("SetCardTeam", PhotonTargets.All, PhotonNetwork.player.GetTeam());
+                pv.RPC("SetCardHero", PhotonTargets.All, MyHero.GetPhotonView().viewID);
+            }
+            // 현재 덱을 만들 때 랜덤으로 만드는 게 아니라 덱을 만들고 거기서 랜덤으로 뽑게 하고 있으며 추후 수정이 필요하다
+
         }
-    }
 
-    // Update is called once per frame
-    void Update () {
-        UpdateTime();
-    }
+        public void CreateMana()
+        {
+            MyMana = PhotonNetwork.Instantiate(this.ManaPrefab.name, MyManaPos.position, Quaternion.identity, 0);
+        }
 
-    void UpdateTime()
-    {        
-        if ( timeContinued == true )
+        public void StartGame()
+        {
+            // 맨 처음 3장씩 뽑는다
+            for (int i = 0; i < 3; i++)
+            {
+                DrawCardFromDeck();
+            }
+            // 20초마다 NewTurn 함수를 호출하여 카드를 뽑고 마나를 채운다
+            InvokeRepeating("NewTurn", 20f, 20f);
+        }
+
+        void Update()
         {
             f_time += Time.deltaTime;
             time = Mathf.FloorToInt(f_time);
             TimeText.text = time.ToString();
-        }
-    }
 
-    void UpdateGame()
-    {
-        MyManaText.text = MyMana.ToString() + "/" + maxMyMana.ToString();
-        AIManaText.text = AIMana.ToString() + "/" + maxAIMana.ToString();
-
-        /*
-        if (MyHero.health <= 0)
-            EndGame(AIHero);
-        if (AIHero.health <= 0)
-            EndGame(MyHero);
-            */
-
-        //UpdateBoard();
-    }
-    /*
-    public void EndGame(HeroBehaviourScript winner)
-    {
-        if (winner == MyHero)
-        {
-            Debug.Log("MyHero");
-            Time.timeScale = 0;
-            winnertext.text = "You Won";
-            //Destroy(this);
+            this.photonView.RPC("SetManaText", PhotonTargets.All, Mana, maxMana);
+            /*
+            if (BlueHero.health <= 0 || RedHero.health <= 0)
+                EndGame(BlueHero);
+             */
         }
 
-        if (winner == AIHero)
+        [PunRPC]
+        public void SetManaText(int mana, int maxMana)
         {
-            Time.timeScale = 0;
-            Debug.Log("AIHero");
-            winnertext.text = "You Losse";
-            //Destroy(this);
-        }
-    }
-    */
-
-    void NewTurn ()
-    {        
-        // 양 팀의 최대마나를 1 늘리고 마나를 1 회복시킨다
-        if (maxMyMana < 10) maxMyMana++;
-        if (MyMana + 1 <= maxMyMana) MyMana += 1;
-        if (maxAIMana < 10) maxAIMana++;
-        if (AIMana + 1 <= maxAIMana) AIMana += 1;
-
-        // 양 팀이 카드를 한 장씩 뽑는다
-        DrawCardFromDeck(CardBehaviourScript.Team.My);
-        DrawCardFromDeck(CardBehaviourScript.Team.AI);
-
-        HandPositionUpdate();
-        //TablePositionUpdate();
-
-        UpdateGame();
-
-    }
-
-    /*
-void OnGUI ()
-{
-    if (gameStarted)
-    {
-        if (GUI.Button(new Rect(Screen.width / 2 - 50, Screen.height / 6 - 25, 100, 50), "End Turn"))
-        {
-            EndTurn();
-        }
-    }
-}
-    */
-
-    public void DrawCardFromDeck(CardBehaviourScript.Team team)
-    {
-        // 카드를 뽑는다
-        if (team == CardBehaviourScript.Team.My && MyDeckCards.Count != 0 && MyHandCards.Count < 5)
-        {
-            int random = Random.Range(0, MyDeckCards.Count);
-            GameObject tempCard = MyDeckCards[random];
-
-            // 카드를 패로 옮긴다
-            //tempCard.transform.position = MyHandPos.position;
-            tempCard.GetComponent<CardBehaviourScript>().newPos = MyHandPos.position;
-            tempCard.GetComponent<CardBehaviourScript>().SetCardStatus(CardBehaviourScript.CardStatus.InHand);
-            tempCard.transform.rotation = Quaternion.identity;
-            //tempCard.transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(0.0f, 180.0f, 0.0f), Time.deltaTime * 3);
-
-            // 카드를 뽑았으면 덱 리스트에서 제거하고 패 리스트에 추가한다
-            MyDeckCards.Remove(tempCard);
-            MyHandCards.Add(tempCard);
+            Debug.Log("RPC: setmanatext");
+            this.MyMana.GetComponent<TextMesh>().text = mana.ToString() + "/" + maxMana.ToString();
         }
 
-        if (team == CardBehaviourScript.Team.AI && AIDeckCards.Count != 0 && AIHandCards.Count < 5)
+        void NewTurn()
         {
-            int random = Random.Range(0, AIDeckCards.Count);
-            GameObject tempCard = AIDeckCards[random];
+            // 최대마나를 1 늘리고 마나를 2 회복시킨다
+            if (maxMana < 10) maxMana++;
+            if (Mana + 2 <= maxMana) Mana += 2;
+            else if (Mana + 1 <= maxMana) Mana += 1;
 
-            //tempCard.transform.position = AIHandPos.position;
-            tempCard.GetComponent<CardBehaviourScript>().newPos = AIHandPos.position;
-            tempCard.GetComponent<CardBehaviourScript>().SetCardStatus(CardBehaviourScript.CardStatus.InHand);
-            tempCard.transform.rotation = Quaternion.identity;
-            //tempCard.transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(0.0f, 180.0f, 0.0f), Time.deltaTime * 3);
-
-            AIDeckCards.Remove(tempCard);
-            AIHandCards.Add(tempCard);
-        }
-        HandPositionUpdate();
-    }
-
-    public void HandPositionUpdate()
-    {
-        // 손 패의 정보를 업데이트한다
-        float space = 0f;
-        float space2 = 0f;
-        float gap = 1.6f;
-
-        foreach (GameObject card in MyHandCards)
-        {
-            int numberOfCards = MyHandCards.Count;
-            card.GetComponent<CardBehaviourScript>().newPos = MyHandPos.position + new Vector3((numberOfCards - 1) * 0.9f - space, 0, 0);
-            space += gap;
+            // 카드를 한 장씩 뽑는다
+            DrawCardFromDeck();
         }
 
-        foreach (GameObject card in AIHandCards)
+        public void DrawCardFromDeck()
         {
-            int numberOfCards = AIHandCards.Count;
-            card.GetComponent<CardBehaviourScript>().newPos = AIHandPos.position + new Vector3(-(numberOfCards - 1) * 0.9f + space2, 0, 0);
-            space2 += gap;
-        }
-    }
-
-    /*
-    public void TablePositionUpdate()
-    {
-        // 테이블의 정보를 업데이트한다
-        float space = 0f;
-        float space2 = 0f;
-        float gap = 1.8f;
-
-        foreach (GameObject card in MyTableCards)
-        {
-            int numberOfCards = MyTableCards.Count;
-            //card.transform.position = myTablePos.position + new Vector3(-numberOfCards + space - 2,0,0);
-            card.GetComponent<CardBehaviourScript>().newPos = MyTablePos.position + new Vector3(-(numberOfCards - 1) * 0.9f + space, 0, 0);
-            space += gap;
-        }
-
-        foreach (GameObject card in AITableCards)
-        {
-            int numberOfCards = AITableCards.Count;
-            //card.transform.position = AITablePos.position + new Vector3(-numberOfCards + space2,0,0);
-            card.GetComponent<CardBehaviourScript>().newPos = AITablePos.position + new Vector3(-(numberOfCards - 1) * 0.9f + space2, 0, 0);
-            space2 += gap;
-        }
-    }
-    */
-
-
-    public void PlaceCard(CardBehaviourScript card)
-    {
-        // 카드를 보드에 놓는다
-        if (card.cardStatus == CardBehaviourScript.CardStatus.InHand && card.team == CardBehaviourScript.Team.My && MyMana - card.mana >= 0)
-        {
-            //card.GetComponent<CardBehaviourScript>().newPos = MyTablePos.position; // 카드의 새 위치를 테이블로 지정
-
-            // 카드를 냈으면 패 리스트에서 제거하고 테이블 리스트에 추가한다            
-            MyHandCards.Remove(card.gameObject);
-            //MyTableCards.Add(card.gameObject);
-            //card.SetCardStatus(CardBehaviourScript.CardStatus.OnTable);
-
-            // 오브젝트를 만든다
-            if (card.cardType == CardBehaviourScript.CardType.Object)
+            // 카드를 무작위로 뽑는다
+            if (MyDeckCards.Count != 0 && MyHandCards.Count < 5)
             {
-                card.CreateObject();
-            }
-            else // 무브먼트를 사용한다
-            {
-                card.DoMovement();
-            }
-            card.SetCardStatus(CardBehaviourScript.CardStatus.Destroyed);
-            Destroy(card.gameObject);
+                int random = Random.Range(0, MyDeckCards.Count);
+                GameObject tempCard = MyDeckCards[random];
 
-            MyMana -= card.mana;
+                // 카드를 패로 갱신한다
+                //tempCard.GetComponent<CardBehaviourScript>().newPos = MyHandPos.position;
+                tempCard.GetComponent<PhotonView>().RPC("SetNewPosition", PhotonTargets.All, MyHandPos.position);
+                tempCard.GetComponent<CardBehaviourScript>().cardStatus = CardBehaviourScript.CardStatus.InHand;
+                tempCard.transform.rotation = Quaternion.identity;
+                //tempCard.transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(0.0f, 180.0f, 0.0f), Time.deltaTime * 3);
+
+                // 카드를 뽑았으면 덱 리스트에서 제거하고 패 리스트에 추가한다
+                MyDeckCards.Remove(tempCard);
+                MyHandCards.Add(tempCard);
+                HandPositionUpdate();
+            }            
         }
 
-        if(card.cardStatus == CardBehaviourScript.CardStatus.InHand && card.team == CardBehaviourScript.Team.AI && AIMana - card.mana >= 0)
+        public void HandPositionUpdate()
         {
-            //card.GetComponent<CardBehaviourScript>().newPos = MyTablePos.position; // 카드의 새 위치를 테이블로 지정
+            // 패의 위치를 조정한다
+            float space = 0f;
+            float gap = -1.6f;
 
-            AIHandCards.Remove(card.gameObject);
-            //AITableCards.Add(card.gameObject);
-            //card.SetCardStatus(CardBehaviourScript.CardStatus.OnTable);
-
-            // 오브젝트를 만든다
-            if (card.cardType == CardBehaviourScript.CardType.Object)
+            foreach (GameObject card in MyHandCards)
             {
-                card.CreateObject();
+                //card.GetComponent<CardBehaviourScript>().newPos = MyHandPos.position + new Vector3((MyHandCards.Count - 1) * 0.9f + space, 0, 0);
+                card.GetComponent<PhotonView>().RPC("SetNewPosition", PhotonTargets.All, MyHandPos.position + new Vector3((MyHandCards.Count - 1) * 0.9f + space, 0, 0));
+
+                space += gap;
             }
-            else // 무브먼트를 사용한다
+        }
+
+        public void PlaceCard(CardBehaviourScript card)
+        {
+            // 카드를 보드에 놓는다
+            if (card.team == PhotonNetwork.player.GetTeam() && Mana - card.mana >= 0)
             {
-                card.DoMovement();
-            }
-            card.SetCardStatus(CardBehaviourScript.CardStatus.Destroyed);
-            Destroy(card.gameObject);
+                // 카드를 냈으면 패 리스트에서 제거한다            
+                MyHandCards.Remove(card.gameObject);
 
-            AIMana -= card.mana;
-        }
-        
-        //TablePositionUpdate();
-        HandPositionUpdate();
-        UpdateGame();
-    }
+                // 오브젝트를 만든다
+                if (card.cardType == CardBehaviourScript.CardType.Object)
+                {
+                    card.CreateObject();
+                }
+                else // 무브먼트를 사용한다
+                {
+                    card.DoMovement();
+                }
+                card.cardStatus = CardBehaviourScript.CardStatus.Destroyed;
+                Destroy(card.gameObject);
 
-    /*
-    void OnTriggerStay(Collider Obj)
-    {
-        // 드래그한 카드가 보드의 트리거를 켜면 카드를 놓는다.
-        CardBehaviourScript card = Obj.GetComponent<CardBehaviourScript>();
-        if (card.GetSelected() == false)
-        { 
-            card.PlaceCard();
-        }
+                Mana -= card.mana;
+            }                   
+            HandPositionUpdate();
+        }        
     }
-    */
 }
