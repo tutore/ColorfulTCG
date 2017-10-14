@@ -10,29 +10,35 @@ namespace Com.tutore.ColofulTCG
 
         public Transform BlueDeckPos;
         public Transform BlueHandPos;
-        public Transform BlueManaPos;
+        //public Transform BlueManaPos;
         public Transform RedDeckPos;
         public Transform RedHandPos;
-        public Transform RedManaPos;
+        //public Transform RedManaPos;
         
         public GameObject HeroPrefab;
         public GameObject[] CardPrefab;
-        public GameObject ManaPrefab;
+        //public GameObject ManaPrefab;
 
         public TextMesh TimeText;
+        public TextMesh BlueManaText;
+        public TextMesh RedManaText;
+        public TextMesh MyManaText;
 
         private List<GameObject> MyDeckCards = new List<GameObject>();
         private List<GameObject> MyHandCards = new List<GameObject>();
 
         private GameObject MyHero;
-        private GameObject MyMana;
+        //private GameObject MyMana;
         
         private Transform MyDeckPos;
         private Transform MyHandPos;
-        private Transform MyManaPos;
+        //private Transform MyManaPos;
 
-        int maxMana = 1;
-        int Mana = 1;
+        public int turn = 1;
+        public PunTeams.Team WhoTurn;
+
+        public int maxMana = 0;
+        public int Mana = 0;
         
         float f_time;
         static int time;
@@ -41,6 +47,8 @@ namespace Com.tutore.ColofulTCG
         
         void Awake()
         {
+            PhotonNetwork.OnEventCall += this.OnEvent; // raiseevent
+
             instance = this;
             // 팀을 설정한다
             InitiateTeam();
@@ -52,12 +60,60 @@ namespace Com.tutore.ColofulTCG
             CreateHero();
             // 카드를 생성하여 덱을 만든다
             CreateDeck();
-            // 마나 표시를 생성한다
-            CreateMana();
+            // 마나를 갱신한다
+            PhotonNetwork.RaiseEvent(0, new object[] { PhotonNetwork.player.GetTeam(), Mana, maxMana }, true, new RaiseEventOptions() { Receivers = ReceiverGroup.All, CachingOption = EventCaching.AddToRoomCache });
+            // 두 플레이어 중 마스터만 실행하여 양 측의 플레이어가 한 번만 턴을 갱신하도록 한다
+            if (PhotonNetwork.isMasterClient)
+                PhotonNetwork.RaiseEvent(1, new object[] { turn }, true, new RaiseEventOptions() { Receivers = ReceiverGroup.All, CachingOption = EventCaching.AddToRoomCache });
 
             StartGame();
         }
         
+        // instant gui -> you have to make button image
+        void OnGUI()
+        {
+            if (GUI.Button(new Rect(Screen.width / 2 - 50, Screen.height / 6 - 25, 100, 50), "End Turn"))
+            {
+                EndTurn();
+            }
+        }
+
+        private void OnEvent(byte eventcode, object content, int senderid)
+        {
+            object[] data = (object[])content;
+            if ( eventcode == 0 )
+            {
+                Debug.Log("OnRaiseEvent: setmanatext");
+                PunTeams.Team team = (PunTeams.Team)data[0];
+                if ( team == PunTeams.Team.blue )
+                    this.BlueManaText.text = ((int)data[1]).ToString() + "/" + ((int)data[2]).ToString();
+                else if (team == PunTeams.Team.red)
+                    this.RedManaText.text = ((int)data[1]).ToString() + "/" + ((int)data[2]).ToString();
+                else
+                    Debug.Log("fail setmanatext");
+            }
+            else if ( eventcode == 1 )
+            {
+                Debug.Log("OnRaiseEvent: changeturn");
+                turn = (int)data[0];
+                if (turn % 2 == 1) WhoTurn = PunTeams.Team.blue;
+                else WhoTurn = PunTeams.Team.red;
+
+                // New Turn
+                if (WhoTurn != PhotonNetwork.player.GetTeam()) return;
+                Debug.Log(PhotonNetwork.player.GetTeam().ToString() + "'s turn start");
+
+                // 최대마나를 1 늘리고 마나를 2 회복시킨다
+                if (maxMana < 10) maxMana++;
+                if (Mana + 2 <= maxMana) Mana += 2;
+                else if (Mana + 1 <= maxMana) Mana += 1;
+                PhotonNetwork.RaiseEvent(0, new object[] { PhotonNetwork.player.GetTeam(), Mana, maxMana }, true, new RaiseEventOptions() { Receivers = ReceiverGroup.All, CachingOption = EventCaching.AddToRoomCache });
+
+                // 카드를 한 장 뽑는다
+                DrawCardFromDeck();
+            }
+        }
+
         /*
         public void EndGame()
         {
@@ -85,14 +141,16 @@ namespace Com.tutore.ColofulTCG
                 PhotonNetwork.player.SetTeam(PunTeams.Team.blue);
                 MyDeckPos = BlueDeckPos;
                 MyHandPos = BlueHandPos;
-                MyManaPos = BlueManaPos;
+                //MyManaPos = BlueManaPos;
+                MyManaText = BlueManaText;
             }
             else if (PhotonNetwork.isNonMasterClientInRoom)
             {
                 PhotonNetwork.player.SetTeam(PunTeams.Team.red);
                 MyDeckPos = RedDeckPos;
                 MyHandPos = RedHandPos;
-                MyManaPos = RedManaPos;
+                //MyManaPos = RedManaPos;
+                MyManaText = RedManaText;
             }
             else
             {
@@ -138,11 +196,6 @@ namespace Com.tutore.ColofulTCG
 
         }
 
-        public void CreateMana()
-        {
-            MyMana = PhotonNetwork.Instantiate(this.ManaPrefab.name, MyManaPos.position, Quaternion.identity, 0);
-        }
-
         public void StartGame()
         {
             // 맨 처음 3장씩 뽑는다
@@ -151,38 +204,40 @@ namespace Com.tutore.ColofulTCG
                 DrawCardFromDeck();
             }
             // 20초마다 NewTurn 함수를 호출하여 카드를 뽑고 마나를 채운다
-            InvokeRepeating("NewTurn", 20f, 20f);
+            // InvokeRepeating("NewTurn", 20f, 20f);
         }
 
         void Update()
         {
+            /*
             f_time += Time.deltaTime;
             time = Mathf.FloorToInt(f_time);
             TimeText.text = time.ToString();
 
-            this.photonView.RPC("SetManaText", PhotonTargets.All, Mana, maxMana);
-            /*
+            //this.photonView.RPC("SetManaText", PhotonTargets.All, Mana, maxMana);
+            
             if (BlueHero.health <= 0 || RedHero.health <= 0)
                 EndGame(BlueHero);
              */
         }
 
-        [PunRPC]
-        public void SetManaText(int mana, int maxMana)
+        // 현재 차례인 사람만 호출 가능
+        void EndTurn()
         {
-            Debug.Log("RPC: setmanatext");
-            this.MyMana.GetComponent<TextMesh>().text = mana.ToString() + "/" + maxMana.ToString();
-        }
+            if (WhoTurn != PhotonNetwork.player.GetTeam()) return;
+            Debug.Log(PhotonNetwork.player.GetTeam().ToString() + "'s turn end");
 
-        void NewTurn()
-        {
-            // 최대마나를 1 늘리고 마나를 2 회복시킨다
-            if (maxMana < 10) maxMana++;
-            if (Mana + 2 <= maxMana) Mana += 2;
-            else if (Mana + 1 <= maxMana) Mana += 1;
+            foreach (GameObject CardObject in GameObject.FindGameObjectsWithTag("Object"))
+            {
+                ObjectBehaviourScript obj = CardObject.GetComponent<ObjectBehaviourScript>();
+                PhotonView objPv = CardObject.GetComponent<PhotonView>();
+                if (obj.health <= 0 && obj.guard <= 0) obj.DestroyObject();
+                    //objPv.RPC("DestroyObject", PhotonTargets.All);
+            }
 
-            // 카드를 한 장씩 뽑는다
-            DrawCardFromDeck();
+            MyHero.GetComponent<HeroBehaviourScript>().basicMove = true;
+            turn++;
+            PhotonNetwork.RaiseEvent(1, new object[] { turn }, true, new RaiseEventOptions() { Receivers = ReceiverGroup.All, CachingOption = EventCaching.AddToRoomCache });
         }
 
         public void DrawCardFromDeck()
@@ -225,6 +280,7 @@ namespace Com.tutore.ColofulTCG
         public void PlaceCard(CardBehaviourScript card)
         {
             // 카드를 보드에 놓는다
+            if (WhoTurn != PhotonNetwork.player.GetTeam()) return;
             if (card.team == PhotonNetwork.player.GetTeam() && Mana - card.mana >= 0)
             {
                 // 카드를 냈으면 패 리스트에서 제거한다            
@@ -240,11 +296,14 @@ namespace Com.tutore.ColofulTCG
                     card.DoMovement();
                 }
                 card.cardStatus = CardBehaviourScript.CardStatus.Destroyed;
-                Destroy(card.gameObject);
+                //Destroy(card.gameObject);
+                //card.GetComponent<PhotonView>().RPC("DestroyCard", PhotonTargets.All);
+                PhotonNetwork.Destroy(card.gameObject);
 
                 Mana -= card.mana;
-            }                   
+            }
+            PhotonNetwork.RaiseEvent(0, new object[] { PhotonNetwork.player.GetTeam(), Mana, maxMana }, true, new RaiseEventOptions() { Receivers = ReceiverGroup.All, CachingOption = EventCaching.AddToRoomCache });
             HandPositionUpdate();
-        }        
+        }
     }
 }

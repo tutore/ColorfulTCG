@@ -13,10 +13,12 @@ namespace Com.tutore.ColofulTCG
         public bool classMove = true;
         public bool heroMove = true;
         */
+        public PhotonView heroPhotonView;
 
         public PunTeams.Team team;
 
         // 스테이터스
+        public GameObject image;
         public int health = 20;
         public TextMesh healthText;
         public int guard = 0;
@@ -34,8 +36,10 @@ namespace Com.tutore.ColofulTCG
         // Use this for initialization
         void Start()
         {
+            heroPhotonView = GetComponent<PhotonView>();
             heroRigidBody = GetComponent<Rigidbody2D>();
 
+            heroPhotonView.RPC("UpdateHeroStatus", PhotonTargets.All, this.health, this.guard, this.damage);
             if (team == PunTeams.Team.blue)
             {
                 direction = Vector2.right;
@@ -43,6 +47,7 @@ namespace Com.tutore.ColofulTCG
             else if(team == PunTeams.Team.red) // 레드팀의 오브젝트면 오브젝트의 좌우를 뒤집는다
             {
                 direction = Vector2.right * (-1);
+                image.transform.rotation = Quaternion.Euler(0.0f, 180.0f, 0.0f);
                 //수정 필요transform.rotation = Quaternion.Euler(0.0f, 180.0f, 0.0f);
             }
         }
@@ -56,6 +61,14 @@ namespace Com.tutore.ColofulTCG
         void FixedUpdate()
         {
             transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.identity, Time.deltaTime * 3); // 쓰러져도 다시 일어서게
+        }
+
+        [PunRPC]
+        public void UpdateHeroStatus(int health, int guard, int damage)
+        {
+            this.health = health;
+            this.guard = guard;
+            this.damage = damage;
             healthText.text = health.ToString();
             guardText.text = guard.ToString();
             damageText.text = damage.ToString();
@@ -88,7 +101,7 @@ namespace Com.tutore.ColofulTCG
                     heroRigidBody.AddForce(Vector2.right * 6000);
                 }
                 basicMove = false; // move once in a turn
-                StartCoroutine("DelayBasicMove");
+                //StartCoroutine("DelayBasicMove");
             }
             /*
             else if (heroMove == true && System.Math.Abs(tmpPos.x - transform.position.x) < 1.0 && tmpPos.y - transform.position.y > 1.0)
@@ -119,11 +132,11 @@ namespace Com.tutore.ColofulTCG
             yield return new WaitForSeconds(10f);
             classMove = true;
         }
-        */
         IEnumerator DelayBasicMove()
         {
             yield return new WaitForSeconds(10f);
             basicMove = true;
         }
+        */
     }
 }

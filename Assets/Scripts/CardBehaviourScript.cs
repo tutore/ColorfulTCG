@@ -31,6 +31,7 @@ namespace Com.tutore.ColofulTCG
         // 카드 정보 끝
 
         public GameObject objectPrefab;
+        public float objectCreatePosition;
 
         public PhotonView cardPhotonView;
 
@@ -99,6 +100,13 @@ namespace Com.tutore.ColofulTCG
         {
             this.newPos = pos;
         }
+        /*
+        [PunRPC]
+        public void DestroyCard()
+        {
+            Destroy(this.gameObject);
+        }
+        */
 
         void SetCardTransform()
         {
@@ -132,7 +140,7 @@ namespace Com.tutore.ColofulTCG
             if (description.Contains("도약"))
             {
                 Debug.Log("도약");
-                heroRigidBody.AddForce(Vector2.up * 15000);
+                heroRigidBody.AddForce(Vector2.up * 20000);
                 heroRigidBody.AddForce(heroData.direction * 6000);
             }
             if (description.Contains("돌진"))
@@ -148,48 +156,51 @@ namespace Com.tutore.ColofulTCG
         {
             GameObject obj;
             Vector3 objectPosition;
+            Vector2 objectDirection;
             ObjectBehaviourScript objectData;
             Rigidbody2D objRigidBody;
-            BoxCollider2D objCollider;
 
             // 오브젝트가 생성될 위치를 정해준다
             objectPosition = MyHero.transform.position;
             if (team == PunTeams.Team.blue)
-                objectPosition.x += 2;
+            {
+                objectPosition.x += objectCreatePosition;
+            }
             else if (team == PunTeams.Team.red)
-                objectPosition.x -= 2;
+            {
+                objectPosition.x -= objectCreatePosition;
+            }
+            objectDirection = MyHero.GetComponent<HeroBehaviourScript>().direction;
             // 오브젝트를 만들고 그 능력치를 카드의 능력치와 같게 해준다
-            obj = PhotonNetwork.Instantiate("Objects/" + this.objectPrefab.name, objectPosition, Quaternion.identity, 0);            
+            obj = PhotonNetwork.Instantiate("Objects/" + this.objectPrefab.name, objectPosition, Quaternion.identity, 0);
             objectData = obj.GetComponent<ObjectBehaviourScript>();
-            objectData.health = health;
-            objectData.guard = guard;
-            objectData.damage = damage;
+            obj.GetComponent<PhotonView>().RPC("UpdateObjectStatus", PhotonTargets.All, health, guard, damage);
             objRigidBody = obj.GetComponent<Rigidbody2D>();
-            objCollider = obj.GetComponent<BoxCollider2D>();
 
             if (team == PunTeams.Team.red) // 레드팀의 오브젝트면 오브젝트의 좌우를 뒤집는다
             {
-                obj.transform.rotation = Quaternion.Euler(0.0f, 180.0f, 0.0f);
+                objectData.image.transform.rotation = Quaternion.Euler(0.0f, 180.0f, 0.0f);
             }
 
             // 특수효과
             if (description.Contains("직사"))
             {
                 Debug.Log("직사");
-                objRigidBody.AddForce(obj.transform.right * 200);   // Vector2.right는 그냥 오른쪽, transform.right는 그 오브젝트의 오른쪽(앞)        
-                objRigidBody.AddForce(obj.transform.up * 80);
+                objRigidBody.AddForce(objectDirection * 200);   // Vector2.right는 그냥 오른쪽, transform.right는 그 오브젝트의 오른쪽(앞)        
+                objRigidBody.AddForce(obj.transform.up * 60);
             }
             if (description.Contains("곡사"))
             {
                 Debug.Log("곡사");
-                objRigidBody.AddForce(obj.transform.right * 200);
-                objRigidBody.AddForce(obj.transform.up * 120);
+                objRigidBody.AddForce(objectDirection * 30);
+                objRigidBody.AddForce(obj.transform.up * 150);
             }
             if (description.Contains("관통"))
             {
                 Debug.Log("관통");
                 objRigidBody.isKinematic = true;    // 오브젝트가 물리 작용을 안 받도록 해준다
-                objCollider.isTrigger = true;       // 오브젝트가 충돌되지 않고 트리거만 발동하도록 해준다
+                // 오브젝트가 충돌되지 않고 트리거만 발동하도록 해준다
+                obj.GetComponent<Collider2D>().isTrigger = true; // 현재 기능안함. 서로 다른 collider2d를 구분하지 않고 접근할 수는 없을까
             }
             // 특수능력 끝
             return obj;
