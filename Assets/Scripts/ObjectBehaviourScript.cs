@@ -49,14 +49,13 @@ namespace Com.tutore.ColofulTCG
 
                 // 체력 계산
                 if (target.health > 0 && damage - target.guard > 0) target.health -= damage - target.guard;
-                if (health > 0 && target.damage - guard > 0) health -= target.damage - guard;
-                if (health < 0 && this.gameObject != null) Invoke("DestroyObject", 1f);
+                if (health < 0 && this.gameObject != null) Invoke("DestroyObject", 0.5f);
 
                 // 계산 결과를 갱신
                 target.objPhotonView.RPC("UpdateObjectStatus", PhotonTargets.All, target.health, target.guard, target.damage);
 
                 // 체력도 방어도 0인 오브젝트가 무언가에 부딪힐 경우 1초 뒤 사라진다
-                if (health <= 0 && guard <= 0 && this.gameObject != null) Invoke("DestroyObject", 1f);
+                if (health <= 0 && guard <= 0 && this.gameObject != null) Invoke("DestroyObject", 0.5f);
                 objPhotonView.RPC("UpdateObjectStatus", PhotonTargets.All, health, guard, damage);
                 Invoke("CanColl", 1f);
             }
@@ -68,14 +67,13 @@ namespace Com.tutore.ColofulTCG
 
                 // 체력 계산
                 if (target.health > 0 && damage - target.guard > 0) target.health -= damage - target.guard;
-                if (health > 0 && target.damage - guard > 0) health -= target.damage - guard;
-                if (health < 0 && this.gameObject != null) Invoke("DestroyObject", 1f);
+                if (health < 0 && this.gameObject != null) Invoke("DestroyObject", 0.5f);
 
                 // 계산 결과를 갱신
                 target.heroPhotonView.RPC("UpdateHeroStatus", PhotonTargets.All, target.health, target.guard, target.damage);
 
                 // 체력도 방어도 0인 오브젝트가 무언가에 부딪힐 경우 1초 뒤 사라진다
-                if (health <= 0 && guard <= 0 && this.gameObject != null) Invoke("DestroyObject", 1f);
+                if (health <= 0 && guard <= 0 && this.gameObject != null) Invoke("DestroyObject", 0.5f);
                 objPhotonView.RPC("UpdateObjectStatus", PhotonTargets.All, health, guard, damage);
                 Invoke("CanColl", 1f);
             }
@@ -93,14 +91,13 @@ namespace Com.tutore.ColofulTCG
 
                 // 체력 계산
                 if (target.health > 0 && damage - target.guard > 0) target.health -= damage - target.guard;
-                if (health > 0 && target.damage - guard > 0) health -= target.damage - guard;
-                if (health < 0 && this.gameObject != null) Invoke("DestroyObject", 1f);
+                if (health < 0 && this.gameObject != null) Invoke("DestroyObject", 0.5f);
 
                 // 계산 결과를 갱신
                 target.objPhotonView.RPC("UpdateObjectStatus", PhotonTargets.All, target.health, target.guard, target.damage);
 
                 // 체력도 방어도 0인 오브젝트가 무언가에 부딪힐 경우 1초 뒤 사라진다
-                if (health <= 0 && guard <= 0 && this.gameObject != null) Invoke("DestroyObject", 1f);
+                if (health <= 0 && guard <= 0 && this.gameObject != null) Invoke("DestroyObject", 0.5f);
                 objPhotonView.RPC("UpdateObjectStatus", PhotonTargets.All, health, guard, damage);
                 Invoke("CanColl", 1f);
             }
@@ -112,16 +109,14 @@ namespace Com.tutore.ColofulTCG
 
                 // 체력 계산
                 if (target.health > 0 && damage - target.guard > 0) target.health -= damage - target.guard;
-                if (health > 0 && target.damage - guard > 0) health -= target.damage - guard;
-                if (health < 0 && this.gameObject != null) Invoke("DestroyObject", 1f);
+                if (health < 0 && this.gameObject != null) Invoke("DestroyObject", 0.5f);
 
                 // 계산 결과를 갱신
                 target.heroPhotonView.RPC("UpdateHeroStatus", PhotonTargets.All, target.health, target.guard, target.damage);
 
                 // 체력도 방어도 0인 오브젝트가 무언가에 부딪힐 경우 1초 뒤 사라진다
-                if (health <= 0 && guard <= 0 && this.gameObject != null) Invoke("DestroyObject", 1f);
+                if (health <= 0 && guard <= 0 && this.gameObject != null) Invoke("DestroyObject", 0.5f);
                 objPhotonView.RPC("UpdateObjectStatus", PhotonTargets.All, health, guard, damage);
-                Invoke("CanColl", 1f);
                 Invoke("CanColl", 1f);
             }
 

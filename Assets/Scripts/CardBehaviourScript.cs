@@ -28,6 +28,9 @@ namespace Com.tutore.ColofulTCG
 
         public enum CardType { Object, Movement };
         public CardType cardType;
+
+        public enum CardElement { Null, Fire, Earth, Water, Wood };
+        public CardElement cardElement;
         // 카드 정보 끝
 
         public GameObject objectPrefab;
@@ -130,12 +133,26 @@ namespace Com.tutore.ColofulTCG
         // 무브먼트 카드를 사용한다
         public void DoMovement()
         {
+            GameObject move;
             Vector3 movementPosition;
+            Vector2 movementDirection;
             HeroBehaviourScript heroData;
             Rigidbody2D heroRigidBody;
             
             heroData = MyHero.GetComponent<HeroBehaviourScript>();
             heroRigidBody = MyHero.GetComponent<Rigidbody2D>();
+
+            // 무브먼트가 생성될 위치를 정해준다
+            movementPosition = MyHero.transform.position;
+            if (team == PunTeams.Team.blue)
+            {
+                movementPosition.x += objectCreatePosition;
+            }
+            else if (team == PunTeams.Team.red)
+            {
+                movementPosition.x -= objectCreatePosition;
+            }
+            movementDirection = MyHero.GetComponent<HeroBehaviourScript>().direction;
 
             if (description.Contains("도약"))
             {
@@ -148,6 +165,12 @@ namespace Com.tutore.ColofulTCG
                 Debug.Log("돌진");
                 heroRigidBody.AddForce(Vector2.up * 10000);
                 heroRigidBody.AddForce(heroData.direction * 10000);
+            }
+            if (description.Contains("후진"))
+            {
+                Debug.Log("후진");
+                heroRigidBody.AddForce(Vector2.up * 10000);
+                heroRigidBody.AddForce(heroData.direction * (-1) * 5000);
             }
         }
 
@@ -171,6 +194,7 @@ namespace Com.tutore.ColofulTCG
                 objectPosition.x -= objectCreatePosition;
             }
             objectDirection = MyHero.GetComponent<HeroBehaviourScript>().direction;
+
             // 오브젝트를 만들고 그 능력치를 카드의 능력치와 같게 해준다
             obj = PhotonNetwork.Instantiate("Objects/" + this.objectPrefab.name, objectPosition, Quaternion.identity, 0);
             objectData = obj.GetComponent<ObjectBehaviourScript>();
@@ -202,6 +226,12 @@ namespace Com.tutore.ColofulTCG
                 // 오브젝트가 충돌되지 않고 트리거만 발동하도록 해준다
                 obj.GetComponent<Collider2D>().isTrigger = true; // 현재 기능안함. 서로 다른 collider2d를 구분하지 않고 접근할 수는 없을까
             }
+            if (description.Contains("회복"))
+            {
+                Debug.Log("회복");
+                //objectData.isHealer = true;
+            }
+
             // 특수능력 끝
             return obj;
         }
