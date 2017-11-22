@@ -26,12 +26,17 @@ namespace Com.tutore.ColofulTCG
         public int damage = 0;
         public TextMesh damageText;
 
+        public int update_period = 0;
+        public int update_health = 0, update_guard = 0, update_damage = 0;
+
         public bool basicMove = true;
 
         public Vector2 direction = Vector2.right;
         Rigidbody2D heroRigidBody;
 
         public Vector2 tmpPos;
+
+        public bool isColl = true;
 
         // Use this for initialization
         void Start()
@@ -78,6 +83,51 @@ namespace Com.tutore.ColofulTCG
         public void SetHeroTeam(PunTeams.Team getTeam)
         {
             this.team = getTeam;
+        }
+
+        [PunRPC]
+        public void TempStatusUpdate(int update_period, int update_health, int update_guard, int update_damage)
+        {
+            this.update_period = update_period;
+            this.update_health = update_health;
+            this.update_guard = update_guard;
+            this.update_damage = update_damage;
+            this.health += update_health;
+            this.guard += update_guard;
+            this.damage += update_damage;
+        }
+
+        void OnCollisionEnter2D(Collision2D other)
+        {
+            // 오브젝트가 충돌하고 만약 충돌 가능 상태일 경우
+
+            if (other.gameObject.tag == "Object" && isColl == true)
+            {
+                Debug.Log("obj collision");
+                isColl = false; // 중복해서 충돌하지 않게 꺼준다
+                ObjectBehaviourScript target = other.gameObject.GetComponent<ObjectBehaviourScript>();
+
+                // 체력 계산
+                if (target.health > 0 && damage - target.guard > 0) target.health -= damage - target.guard;                    
+                if (health < 0 && this.gameObject != null) Invoke("DestroyObject", 0.5f);
+
+                // 계산 결과를 갱신
+                target.objPhotonView.RPC("UpdateObjectStatus", PhotonTargets.All, target.health, target.guard, target.damage);
+                
+                Invoke("CanColl", 2f);
+            }
+            else if (other.gameObject.tag == "Player" && isColl == true)
+            {
+                Debug.Log("player collision");
+                isColl = false; // 중복해서 충돌하지 않게 꺼준다
+                HeroBehaviourScript target = other.gameObject.GetComponent<HeroBehaviourScript>();
+
+                // 체력 계산
+                if (target.health > 0 && damage - target.guard > 0) target.health -= damage - target.guard;
+
+                // 계산 결과를 갱신
+                target.heroPhotonView.RPC("UpdateHeroStatus", PhotonTargets.All, target.health, target.guard, target.damage);                
+            }
         }
 
         void OnMouseDrag() // save temp position
@@ -139,4 +189,5 @@ namespace Com.tutore.ColofulTCG
         }
         */
     }
+
 }

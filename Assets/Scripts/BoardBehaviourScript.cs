@@ -232,10 +232,24 @@ namespace Com.tutore.ColofulTCG
                 ObjectBehaviourScript obj = CardObject.GetComponent<ObjectBehaviourScript>();
                 PhotonView objPv = CardObject.GetComponent<PhotonView>();
                 if (obj.health <= 0 && obj.guard <= 0) obj.DestroyObject();
-                    //objPv.RPC("DestroyObject", PhotonTargets.All);
+                if (obj.objectElement == ObjectBehaviourScript.ObjectElement.Wood)
+                    obj.health++;
+                objPv.RPC("UpdateObjectStatusobj", PhotonTargets.All, obj.health, obj.guard, obj.damage);
             }
-
-            MyHero.GetComponent<HeroBehaviourScript>().basicMove = true;
+            HeroBehaviourScript myhero = MyHero.GetComponent<HeroBehaviourScript>();
+            myhero.basicMove = true;
+            if (myhero.update_period > 0)
+            {
+                myhero.update_period--;
+                MyHero.GetComponent<PhotonView>().RPC("UpdateHeroStatus", PhotonTargets.All, 
+                    myhero.health - myhero.update_health, 
+                    myhero.guard - myhero.update_guard, 
+                    myhero.damage - myhero.update_damage);
+                if (myhero.update_period == 0)
+                {
+                    MyHero.GetComponent<PhotonView>().RPC("TempStatusUpdate", PhotonTargets.All, 0, 0, 0, 0);
+                }
+            }
             turn++;
             PhotonNetwork.RaiseEvent(1, new object[] { turn }, true, new RaiseEventOptions() { Receivers = ReceiverGroup.All, CachingOption = EventCaching.AddToRoomCache });
         }

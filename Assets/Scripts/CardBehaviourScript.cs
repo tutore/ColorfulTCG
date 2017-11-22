@@ -34,7 +34,7 @@ namespace Com.tutore.ColofulTCG
         // 카드 정보 끝
 
         public GameObject objectPrefab;
-        public float objectCreatePosition;
+        public Vector3 objectCreatePosition;
 
         public PhotonView cardPhotonView;
 
@@ -146,11 +146,13 @@ namespace Com.tutore.ColofulTCG
             movementPosition = MyHero.transform.position;
             if (team == PunTeams.Team.blue)
             {
-                movementPosition.x += objectCreatePosition;
+                movementPosition.x += objectCreatePosition.x;
+                movementPosition.y += objectCreatePosition.y;
             }
             else if (team == PunTeams.Team.red)
             {
-                movementPosition.x -= objectCreatePosition;
+                movementPosition.x -= objectCreatePosition.x;
+                movementPosition.y += objectCreatePosition.y;
             }
             movementDirection = MyHero.GetComponent<HeroBehaviourScript>().direction;
 
@@ -163,14 +165,25 @@ namespace Com.tutore.ColofulTCG
             if (description.Contains("돌진"))
             {
                 Debug.Log("돌진");
+                MyHero.GetComponent<PhotonView>().RPC("TempStatusUpdate", PhotonTargets.All, 1, 0, 0, 1);
                 heroRigidBody.AddForce(Vector2.up * 10000);
                 heroRigidBody.AddForce(heroData.direction * 10000);
+                //heroData.UpdateHeroStatus(1, 0, 0, 1); // 자신의 턴 종료 시까지 영웅의 데미지 1 증가
             }
             if (description.Contains("후진"))
             {
                 Debug.Log("후진");
                 heroRigidBody.AddForce(Vector2.up * 10000);
                 heroRigidBody.AddForce(heroData.direction * (-1) * 5000);
+            }
+            if (description.Contains("강타"))
+            {
+                Debug.Log("강타");
+                heroRigidBody.AddForce(Vector2.up * 10000);
+                heroRigidBody.AddForce(heroData.direction * 6000);
+                MyHero.GetComponent<PhotonView>().RPC("TempStatusUpdate", PhotonTargets.All, 1, 0, 0, 2);
+                
+                //heroData.UpdateHeroStatus(1, 0, 0, 2); // 자신의 턴 종료 시까지 영웅의 데미지 1 증가
             }
         }
 
@@ -187,11 +200,13 @@ namespace Com.tutore.ColofulTCG
             objectPosition = MyHero.transform.position;
             if (team == PunTeams.Team.blue)
             {
-                objectPosition.x += objectCreatePosition;
+                objectPosition.x += objectCreatePosition.x;
+                objectPosition.y += objectCreatePosition.y;
             }
             else if (team == PunTeams.Team.red)
             {
-                objectPosition.x -= objectCreatePosition;
+                objectPosition.x -= objectCreatePosition.x;
+                objectPosition.y += objectCreatePosition.y;
             }
             objectDirection = MyHero.GetComponent<HeroBehaviourScript>().direction;
 
@@ -229,7 +244,7 @@ namespace Com.tutore.ColofulTCG
             if (description.Contains("회복"))
             {
                 Debug.Log("회복");
-                //objectData.isHealer = true;
+                objectData.isHealer = true;
             }
 
             // 특수능력 끝

@@ -8,6 +8,9 @@ namespace Com.tutore.ColofulTCG
     {
         CardBehaviourScript card;
 
+        public enum ObjectElement { Null, Fire, Earth, Water, Wood };
+        public ObjectElement objectElement;
+
         public GameObject image;
         public int health = 0;
         public TextMesh healthText;
@@ -16,6 +19,8 @@ namespace Com.tutore.ColofulTCG
         public int damage = 0;
         public TextMesh damageText;
         public bool isColl = true; // 충돌 가능 상태
+
+        public bool isHealer = false;
 
         public PhotonView objPhotonView;
 
@@ -48,8 +53,13 @@ namespace Com.tutore.ColofulTCG
                 ObjectBehaviourScript target = other.gameObject.GetComponent<ObjectBehaviourScript>();
 
                 // 체력 계산
-                if (target.health > 0 && damage - target.guard > 0) target.health -= damage - target.guard;
+                if (objectElement != ObjectElement.Fire || target.objectElement != ObjectElement.Earth) // 불 속성은 땅 속성에 데미지를 주지 못한다
+                {
+                    if (target.health > 0 && damage - target.guard > 0) target.health -= damage - target.guard;
+                    if (objectElement == ObjectElement.Water && target.objectElement == ObjectElement.Earth) target.guard -= damage; // 물 속성은 땅 속성의 방어를 깎는다
+                }
                 if (health < 0 && this.gameObject != null) Invoke("DestroyObject", 0.5f);
+                if (isHealer == true && target.health > 0) target.health++; 
 
                 // 계산 결과를 갱신
                 target.objPhotonView.RPC("UpdateObjectStatus", PhotonTargets.All, target.health, target.guard, target.damage);
@@ -57,7 +67,7 @@ namespace Com.tutore.ColofulTCG
                 // 체력도 방어도 0인 오브젝트가 무언가에 부딪힐 경우 1초 뒤 사라진다
                 if (health <= 0 && guard <= 0 && this.gameObject != null) Invoke("DestroyObject", 0.5f);
                 objPhotonView.RPC("UpdateObjectStatus", PhotonTargets.All, health, guard, damage);
-                Invoke("CanColl", 1f);
+                Invoke("CanColl", 2f);
             }
             else if (other.gameObject.tag == "Player" && isColl == true)
             {
@@ -67,7 +77,7 @@ namespace Com.tutore.ColofulTCG
 
                 // 체력 계산
                 if (target.health > 0 && damage - target.guard > 0) target.health -= damage - target.guard;
-                if (health < 0 && this.gameObject != null) Invoke("DestroyObject", 0.5f);
+                if (isHealer && target.team == PhotonNetwork.player.GetTeam()) target.health++;
 
                 // 계산 결과를 갱신
                 target.heroPhotonView.RPC("UpdateHeroStatus", PhotonTargets.All, target.health, target.guard, target.damage);
@@ -75,7 +85,17 @@ namespace Com.tutore.ColofulTCG
                 // 체력도 방어도 0인 오브젝트가 무언가에 부딪힐 경우 1초 뒤 사라진다
                 if (health <= 0 && guard <= 0 && this.gameObject != null) Invoke("DestroyObject", 0.5f);
                 objPhotonView.RPC("UpdateObjectStatus", PhotonTargets.All, health, guard, damage);
-                Invoke("CanColl", 1f);
+                Invoke("CanColl", 2f);
+            }
+            else if (other.gameObject.tag == "Ground" && isColl == true)
+            {
+                Debug.Log("ground collision");
+                isColl = false; // 중복해서 충돌하지 않게 꺼준다
+
+                // 체력도 방어도 0인 오브젝트가 무언가에 부딪힐 경우 1초 뒤 사라진다
+                if (health <= 0 && guard <= 0 && this.gameObject != null) Invoke("DestroyObject", 0.5f);
+                objPhotonView.RPC("UpdateObjectStatus", PhotonTargets.All, health, guard, damage);
+                Invoke("CanColl", 2f);
             }
         }
 
@@ -90,8 +110,11 @@ namespace Com.tutore.ColofulTCG
                 ObjectBehaviourScript target = other.gameObject.GetComponent<ObjectBehaviourScript>();
 
                 // 체력 계산
-                if (target.health > 0 && damage - target.guard > 0) target.health -= damage - target.guard;
-                if (health < 0 && this.gameObject != null) Invoke("DestroyObject", 0.5f);
+                if (objectElement != ObjectElement.Fire || target.objectElement != ObjectElement.Earth) // 불 속성은 땅 속성에 데미지를 주지 못한다
+                {
+                    if (target.health > 0 && damage - target.guard > 0) target.health -= damage - target.guard;
+                    if (objectElement == ObjectElement.Water && target.objectElement == ObjectElement.Earth) target.guard -= damage; // 물 속성은 땅 속성의 방어를 깎는다
+                }
 
                 // 계산 결과를 갱신
                 target.objPhotonView.RPC("UpdateObjectStatus", PhotonTargets.All, target.health, target.guard, target.damage);
@@ -99,7 +122,7 @@ namespace Com.tutore.ColofulTCG
                 // 체력도 방어도 0인 오브젝트가 무언가에 부딪힐 경우 1초 뒤 사라진다
                 if (health <= 0 && guard <= 0 && this.gameObject != null) Invoke("DestroyObject", 0.5f);
                 objPhotonView.RPC("UpdateObjectStatus", PhotonTargets.All, health, guard, damage);
-                Invoke("CanColl", 1f);
+                Invoke("CanColl", 2f);
             }
             else if (other.gameObject.tag == "Player" && isColl == true)
             {
@@ -109,7 +132,7 @@ namespace Com.tutore.ColofulTCG
 
                 // 체력 계산
                 if (target.health > 0 && damage - target.guard > 0) target.health -= damage - target.guard;
-                if (health < 0 && this.gameObject != null) Invoke("DestroyObject", 0.5f);
+                
 
                 // 계산 결과를 갱신
                 target.heroPhotonView.RPC("UpdateHeroStatus", PhotonTargets.All, target.health, target.guard, target.damage);
@@ -117,7 +140,7 @@ namespace Com.tutore.ColofulTCG
                 // 체력도 방어도 0인 오브젝트가 무언가에 부딪힐 경우 1초 뒤 사라진다
                 if (health <= 0 && guard <= 0 && this.gameObject != null) Invoke("DestroyObject", 0.5f);
                 objPhotonView.RPC("UpdateObjectStatus", PhotonTargets.All, health, guard, damage);
-                Invoke("CanColl", 1f);
+                Invoke("CanColl", 2f);
             }
 
         }
@@ -141,9 +164,10 @@ namespace Com.tutore.ColofulTCG
         // 부딪칠 때 여러번 충돌 판정 되지 않게 막음
         void CanColl()
         {
-            SetColl(true);
+            objPhotonView.RPC("SetColl", PhotonTargets.All, true);
         }
 
+        [PunRPC]
         public void SetColl(bool coll)
         {
             isColl = coll;
